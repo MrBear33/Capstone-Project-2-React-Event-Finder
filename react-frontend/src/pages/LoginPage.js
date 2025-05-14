@@ -1,42 +1,44 @@
-import React, { useState } from 'react';         // React and useState for managing form input and error state
-import axios from 'axios';                       // Axios for sending HTTP requests
-import { useNavigate } from 'react-router-dom';  // useNavigate is used to redirect after login
+import React, { useState } from 'react';               // useState for handling form and error state
+import axios from 'axios';                             // Axios for making HTTP requests
+import { useNavigate } from 'react-router-dom';        // For redirecting after login
 
-function LoginPage() {
-  // State to store form input values
+function LoginPage({ setUser }) {
+  // Stores form input values
   const [formData, setFormData] = useState({ username: '', password: '' });
 
-  // State to track error messages (like invalid credentials)
+  // Stores any login error messages
   const [error, setError] = useState('');
 
-  // useNavigate lets us change the route
+  // Used to redirect the user after login
   const navigate = useNavigate();
 
-  // Handle form input changes (update formData state)
+  // Updates form values as user types
   const handleChange = evt => {
-    const { name, value } = evt.target;           // Destructure name and value from the input event
-    setFormData(data => ({ ...data, [name]: value })); // Update only the changed field
+    const { name, value } = evt.target;
+    setFormData(data => ({ ...data, [name]: value }));
   };
 
-  // Handle form submission (send login request)
+  // Handles form submission
   const handleSubmit = async evt => {
-    evt.preventDefault();                         // Prevent default form refresh
-    setError('');                                  // Clear any previous errors
+    evt.preventDefault();            // Prevent full page reload
+    setError('');                    // Clear previous errors
 
     try {
-      // Send login data to Flask backend
+      // Send login request to Flask backend
       const res = await axios.post(
-        '/login',                                 // Backend login endpoint
-        formData,                                 // Form data with username and password
-        { withCredentials: true }                 // Include cookies for session support
+        '/login',                    // Flask login route
+        formData,                    // Includes username and password
+        { withCredentials: true }    // Needed to include session cookie
       );
 
-      // If login is successful, redirect to the user homepage
+      // If login is successful
       if (res.status === 200) {
-        navigate(`/user/${formData.username}`);   // Go to /user/username
+        const { username } = res.data;   // Get username from response
+        setUser(username);               // Save to App state
+        navigate(`/user/${username}`);   // Redirect to user's homepage
       }
     } catch (err) {
-      // If there's an error (bad login), show a message
+      // Show error if login fails
       console.error(err);
       setError('Invalid username or password.');
     }
@@ -46,7 +48,7 @@ function LoginPage() {
     <div>
       <h2>Login</h2>
 
-      {/* Show error message if one exists */}
+      {/* Show error message if present */}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {/* Login form */}
@@ -57,25 +59,27 @@ function LoginPage() {
             name="username"
             value={formData.username}
             onChange={handleChange}
-            required                                // Make this field required
+            required
           />
         </label>
         <br />
+
         <label>
           Password:
           <input
             name="password"
-            type="password"                         // Hide password text
+            type="password"
             value={formData.password}
             onChange={handleChange}
             required
           />
         </label>
         <br />
-        <button type="submit">Log In</button>       // Submit the form
+
+        <button type="submit">Log In</button>
       </form>
     </div>
   );
 }
 
-export default LoginPage;  // Export the component so it can be used in routing
+export default LoginPage;   // Make the component usable in App.js
