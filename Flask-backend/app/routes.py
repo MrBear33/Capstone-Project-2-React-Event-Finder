@@ -21,6 +21,8 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 
+
+
 def init_routes(app):
     # User login route
     @app.route('/login', methods=['POST'])
@@ -48,6 +50,17 @@ def init_routes(app):
             return jsonify({"message": "Login successful", "username": user.username}), 200
 
         return jsonify({"error": "Invalid username or password"}), 401
+    
+    @app.route('/check-auth')
+    def check_auth():
+        if current_user.is_authenticated:
+            return jsonify({
+                "authenticated": True,
+                "username": current_user.username
+            }), 200
+        return jsonify({
+            "authenticated": False
+        }), 401
 
     # User registration route
     @app.route('/register', methods=['POST'])
