@@ -1,50 +1,51 @@
-import React, { useState } from 'react';         // for managing form state
-import axios from 'axios';                       // to send POST request to backend
-import { useNavigate } from 'react-router-dom';  // lets us redirect after successful register
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function RegisterPage() {
-  // state for form input fields
+  // Stores form input values for registration
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: ''
   });
 
-  // to display error/success messages
+  // Holds any error messages returned from the backend
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
-  const navigate = useNavigate();  // used for redirecting
+  // Redirect user after successful registration
+  const navigate = useNavigate();
 
-  // updates form values as the user types
+  // Update form values as user types
   const handleChange = evt => {
     const { name, value } = evt.target;
     setFormData(data => ({ ...data, [name]: value }));
   };
 
-  // runs when the form is submitted
+  // Submit registration form to Flask backend
   const handleSubmit = async evt => {
-    evt.preventDefault();  // stop page reload
-    setError('');
-    setSuccess('');
+    evt.preventDefault();  // Prevent page reload
+    setError('');          // Clear any previous error messages
 
     try {
-      // send form data to backend to register user
       const res = await axios.post(
-        '/register',
+        '/register',       // Flask endpoint
         formData,
-        { withCredentials: true }  // make sure cookies (like session) are included
+        { withCredentials: true }
       );
 
-      // if backend returns success, show message and go to login page
-      if (res.status === 200) {
-        setSuccess('Registration successful!');
+      if (res.status === 201) {
+        // If registration successful, redirect to login page
         navigate('/login');
       }
     } catch (err) {
-      // if something goes wrong, show an error message
+      // If backend returns an error, display it
       console.error(err);
-      setError('Registration failed. Please check your input.');
+      if (err.response && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     }
   };
 
@@ -52,13 +53,10 @@ function RegisterPage() {
     <div>
       <h2>Register</h2>
 
-      {/* show any error */}
+      {/* Show error if one exists */}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* show success message */}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
-
-      {/* registration form */}
+      {/* Registration form */}
       <form onSubmit={handleSubmit}>
         <label>
           Username:
