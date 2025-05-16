@@ -99,13 +99,15 @@ def init_routes(app):
             return jsonify({"error": "User not found"}), 404
 
         saved_events = [
-            {
-                "name": e.event.name,
-                "location": e.event.location,
-                "date": e.event.date.isoformat(),
-                "image_url": e.event.image_url
-            } for e in user.saved_events
-        ]
+        {
+        "name": e.event.name,
+        "location": e.event.location,
+        "date": e.event.date.isoformat(),
+        "image_url": e.event.image_url,
+        "saved_event_id": e.id  # ← Add this line
+        } for e in user.saved_events
+]
+
 
         return jsonify({
             "username": user.username,
