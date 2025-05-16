@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import './Pagelayout.css'; // Import CSS for styling
 
 function EditProfile({ user }) {
   const [bio, setBio] = useState('');               // New bio input
@@ -47,7 +48,7 @@ function EditProfile({ user }) {
   };
 
   return (
-    <div>
+    <div className="page-container">
       <h2>Edit Profile</h2>
 
       {success && <p style={{ color: 'green' }}>{success}</p>}

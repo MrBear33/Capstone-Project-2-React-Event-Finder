@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import '.Pagelayout.css'; // Import CSS for styling
 
 function EventsPage({ user }) {
   const [events, setEvents] = useState([]);       // Fetched event list
@@ -46,7 +47,7 @@ function EventsPage({ user }) {
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
-    <div>
+    <div className="page-container">
       <h2>Nearby Events</h2>
 
       {events.length === 0 ? (

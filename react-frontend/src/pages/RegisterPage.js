@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import './Pagelayout.css'; // Import CSS for styling
 
 function RegisterPage() {
   // Stores form input values for registration
@@ -50,7 +51,7 @@ function RegisterPage() {
   };
 
   return (
-    <div>
+    <div className="page-container">
       <h2>Register</h2>
 
       {/* Show error if one exists */}

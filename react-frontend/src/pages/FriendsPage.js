@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import '.Pagelayout.css'; // Import CSS for styling
 
 function FriendsPage({ user }) {
   const [friends, setFriends] = useState([]);   // List of current friends
@@ -51,7 +52,7 @@ function FriendsPage({ user }) {
   }
 
   return (
-    <div>
+    <div className="page-container">
       <h2>Your Friends</h2>
 
       {/* Show list of current friends */}

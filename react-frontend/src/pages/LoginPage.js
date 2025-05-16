@@ -1,6 +1,7 @@
 import React, { useState } from 'react';               // useState for handling form and error state
 import axios from 'axios';                             // Axios for making HTTP requests
 import { useNavigate } from 'react-router-dom';        // For redirecting after login
+import '.Pagelayout.css'; // Import CSS for styling
 
 function LoginPage({ setUser }) {
   // Stores form input values
@@ -45,7 +46,7 @@ function LoginPage({ setUser }) {
   };
 
   return (
-    <div>
+    <div className="page-container">
       <h2>Login</h2>
 
       {/* Show error message if present */}
