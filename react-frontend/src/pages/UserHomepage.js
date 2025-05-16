@@ -3,27 +3,31 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
 function UserHomepage({ user }) {
-  // Extract the `:username` from the URL
+  // Extract the `:username` parameter from the route (e.g., /user/jacob)
   const { username } = useParams();
 
-  // Store the user's data and their saved events
+  // Store the user’s data and saved events from the backend
   const [userData, setUserData] = useState(null);
 
-  // Error and loading states for feedback
+  // General error and loading states
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Fetch user info and saved events when the page loads
+  // Feedback messages for successful or failed event removal
+  const [message, setMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Fetch user profile and saved events when this component mounts
   useEffect(() => {
     async function fetchUserData() {
       try {
-        // Call the Flask backend to get this user's info
+        // Request user data from the Flask backend
         const res = await axios.get(`/user/${username}`, {
-          withCredentials: true // Include cookies for session-based login
+          withCredentials: true  // Required to include Flask session cookies
         });
 
-        setUserData(res.data);  // Set the returned user data in state
-        setLoading(false);      // Stop showing loading indicator
+        setUserData(res.data);  // Save user info and events to state
+        setLoading(false);      // Done loading
       } catch (err) {
         console.error("Error fetching user data:", err);
         setError('Unable to load user profile.');
@@ -31,53 +35,68 @@ function UserHomepage({ user }) {
       }
     }
 
-    fetchUserData(); // Run the async function
+    fetchUserData();
   }, [username]);
 
-  // Handle removing a saved event by its `saved_event_id`
+  // Called when the user clicks "Remove" on a saved event
   async function handleRemove(savedEventId) {
     try {
-      // Tell the backend to remove this saved event
-      await axios.post(`/remove_saved_event/${savedEventId}`, null, {
+      // Call backend to remove the event for this user
+      const res = await axios.post(`/remove_saved_event/${savedEventId}`, null, {
         withCredentials: true
       });
 
-      // Update the saved events list in the UI by filtering it out
-      setUserData(data => ({
-        ...data,
-        saved_events: data.saved_events.filter(event => event.saved_event_id !== savedEventId)
-      }));
+      if (res.status === 200) {
+        // Success: show message and update the saved events list
+        setMessage("Event removed successfully.");
+        setErrorMessage('');
+
+        // Remove event from the current state
+        setUserData(data => ({
+          ...data,
+          saved_events: data.saved_events.filter(event => event.saved_event_id !== savedEventId)
+        }));
+
+        // Optional: auto-clear message after 3 seconds
+        setTimeout(() => setMessage(''), 3000);
+      }
     } catch (err) {
       console.error("Error removing saved event:", err);
+      setMessage('');
+      setErrorMessage("Failed to remove event. Please try again.");
     }
   }
 
-  // Show loading message while data is being fetched
+  // Show loading text while the API request is in progress
   if (loading) return <p>Loading user profile...</p>;
 
-  // Show error message if data couldn't be loaded
+  // Show an error message if the request failed
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
     <div>
       <h2>Welcome, {userData.username}!</h2>
 
-      {/* Show the user's bio if they have one */}
+      {/* Display bio if it exists */}
       {userData.bio && <p><strong>Bio:</strong> {userData.bio}</p>}
 
       <h3>Saved Events</h3>
 
-      {/* Render a list of saved events, or a fallback message if none exist */}
+      {/* Show feedback messages */}
+      {message && <p style={{ color: 'green' }}>{message}</p>}
+      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+
+      {/* List of saved events, or a fallback message if none exist */}
       {userData.saved_events.length > 0 ? (
         <ul>
           {userData.saved_events.map((event) => (
             <li key={event.saved_event_id}>
-              {/* Event details */}
+              {/* Event name, location, and formatted date */}
               <p><strong>{event.name}</strong></p>
               <p>{event.location}</p>
               <p>{new Date(event.date).toLocaleString()}</p>
 
-              {/* Show event image if one is available */}
+              {/* Display event image if provided */}
               {event.image_url && (
                 <img
                   src={event.image_url}
@@ -86,7 +105,7 @@ function UserHomepage({ user }) {
                 />
               )}
 
-              {/* Button to remove the event from user's saved list */}
+              {/* Remove button triggers handleRemove with the saved_event_id */}
               <button onClick={() => handleRemove(event.saved_event_id)}>
                 Remove
               </button>
