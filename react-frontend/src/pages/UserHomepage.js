@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import './UserHomepage.css'; // Import CSS for styling
 
 function UserHomepage({ user }) {
   // Extract the `:username` parameter from the route (e.g., /user/jacob)
@@ -74,38 +75,31 @@ function UserHomepage({ user }) {
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
-    <div>
+    <div className="user-homepage">
       <h2>Welcome, {userData.username}!</h2>
 
-      {/* Display bio if it exists */}
       {userData.bio && <p><strong>Bio:</strong> {userData.bio}</p>}
 
       <h3>Saved Events</h3>
 
-      {/* Show feedback messages */}
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+      {message && <p className="success-message">{message}</p>}
+      {errorMessage && <p className="error-message">{errorMessage}</p>}
 
-      {/* List of saved events, or a fallback message if none exist */}
       {userData.saved_events.length > 0 ? (
-        <ul>
+        <ul className="event-list">
           {userData.saved_events.map((event) => (
-            <li key={event.saved_event_id}>
-              {/* Event name, location, and formatted date */}
+            <li key={event.saved_event_id} className="event-card">
               <p><strong>{event.name}</strong></p>
               <p>{event.location}</p>
               <p>{new Date(event.date).toLocaleString()}</p>
 
-              {/* Display event image if provided */}
               {event.image_url && (
                 <img
                   src={event.image_url}
                   alt={event.name}
-                  style={{ maxWidth: "200px", marginBottom: "1rem" }}
                 />
               )}
 
-              {/* Remove button triggers handleRemove with the saved_event_id */}
               <button onClick={() => handleRemove(event.saved_event_id)}>
                 Remove
               </button>
@@ -117,6 +111,6 @@ function UserHomepage({ user }) {
       )}
     </div>
   );
-}
+}  
 
 export default UserHomepage;
