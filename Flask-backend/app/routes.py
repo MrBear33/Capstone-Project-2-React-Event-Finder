@@ -104,7 +104,7 @@ def init_routes(app):
         "location": e.event.location,
         "date": e.event.date.isoformat(),
         "image_url": e.event.image_url,
-        "saved_event_id": e.id  # ← Add this line
+        "saved_event_id": e.id  
         } for e in user.saved_events
 ]
 
