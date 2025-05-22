@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import './Pagelayout.css'; // Import CSS for styling
+import './PageStyles.css'; // Import CSS for styling
 
 function EditProfile({ user }) {
   const [bio, setBio] = useState('');               // New bio input

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import '.Pagelayout.css'; // Import CSS for styling
+import './PageStyles.css'; // Import CSS for styling
 
 function EventsPage({ user }) {
   const [events, setEvents] = useState([]);       // Fetched event list

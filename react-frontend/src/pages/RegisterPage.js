@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import './Pagelayout.css'; // Import CSS for styling
+import './PageStyles.css'; // Import CSS for styling
 
 function RegisterPage() {
   // Stores form input values for registration

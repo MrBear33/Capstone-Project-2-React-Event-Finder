@@ -14,7 +14,7 @@ app = create_app()
 # Set up logging
 logging.basicConfig(
     level=logging.DEBUG,  # Log level
-    format='%(asctime)s - %(levelname)s - %(message)s',  # Log format
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Log format (From stack overflow)
 )
 
 # Log the database URI for debugging

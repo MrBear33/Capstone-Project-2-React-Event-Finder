@@ -11,7 +11,7 @@ import FriendsPage from './pages/FriendsPage';
 import EditProfile from './pages/EditProfile';
 
 // Navbar component
-import Navbar from './components/Navbar';
+import Navbar from './pages/Navbar';
 
 function App() {
   const [user, setUser] = useState(null);       // Stores logged-in user
