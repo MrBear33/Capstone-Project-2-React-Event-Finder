@@ -45,6 +45,11 @@ def init_routes(app):
                     location_data = geo_res.json().get('location')
                     if location_data:
                         session['geolocation'] = location_data
+                        logging.debug(f"Saved geolocation to session: {session['geolocation']}")
+
+                else:
+                    logging.error(f"Geolocation request failed: {geo_res.status_code} - {geo_res.text}")
+            
             except Exception as e:
                 logging.error(f"Geolocation error: {e}")
             return jsonify({"message": "Login successful", "username": user.username}), 200
@@ -97,6 +102,7 @@ def init_routes(app):
         user = User.query.filter_by(username=username).first()
         if not user:
             return jsonify({"error": "User not found"}), 404
+        
 
         saved_events = [
         {
@@ -107,12 +113,20 @@ def init_routes(app):
         "saved_event_id": e.id  
         } for e in user.saved_events
 ]
+        geolocation = session.get('geolocation', {})
+        lat = geolocation.get('lat')
+        lng = geolocation.get('lng')
+
+        logging.debug(f"Session geolocation on homepage: {session.get('geolocation')}")
+        logging.debug(f"Geolocation for {user.username}: lat={lat}, lng={lng}")
 
 
         return jsonify({
             "username": user.username,
             "bio": user.bio,
-            "saved_events": saved_events
+            "saved_events": saved_events,
+            "latitude": lat,
+            "longitude": lng,
         }), 200
 
     # Fetch nearby events using Ticketmaster API
