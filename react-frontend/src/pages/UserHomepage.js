@@ -1,37 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import './UserHomepage.css'; // Import CSS for styling
+import './UserHomepage.css'; // Styling for this page
 
 function UserHomepage({ user }) {
-  // Extract the `:username` parameter from the route (e.g., /user/jacob)
+  // Grab the username from the URL (like /user/jacob)
   const { username } = useParams();
 
-  // Store the user’s data and saved events from the backend
+  // Holds all the user info we get from the backend
   const [userData, setUserData] = useState(null);
 
-  // General error and loading states
+  // Track if we're still waiting for the data or if something went wrong
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Feedback messages for successful or failed event removal
+  // These show little messages when someone removes an event
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Fetch user profile and saved events when this component mounts
+  // This runs when the page first loads to fetch the user's info
   useEffect(() => {
     async function fetchUserData() {
       try {
-        // Request user data from the Flask backend
+        // Ask the backend for user info + saved events
         const res = await axios.get(`/user/${username}`, {
-          withCredentials: true  // Required to include Flask session cookies
+          withCredentials: true // Make sure session data is sent
         });
-
-        setUserData(res.data);  // Save user info and events to state
-        setLoading(false);      // Done loading
+        setUserData(res.data);
+        setLoading(false);
       } catch (err) {
-        console.error("Error fetching user data:", err);
-        setError('Unable to load user profile.');
+        console.error("Couldn't load profile:", err);
+        setError('Couldn’t load your profile right now.');
         setLoading(false);
       }
     }
@@ -39,52 +38,60 @@ function UserHomepage({ user }) {
     fetchUserData();
   }, [username]);
 
-  // Called when the user clicks "Remove" on a saved event
+  // Called when the user clicks “Remove” on an event
   async function handleRemove(savedEventId) {
     try {
-      // Call backend to remove the event for this user
       const res = await axios.post(`/remove_saved_event/${savedEventId}`, null, {
         withCredentials: true
       });
 
       if (res.status === 200) {
-        // Success: show message and update the saved events list
-        setMessage("Event removed successfully.");
+        // Success – update the UI and show a message
+        setMessage("Event removed!");
         setErrorMessage('');
 
-        // Remove event from the current state
         setUserData(data => ({
           ...data,
           saved_events: data.saved_events.filter(event => event.saved_event_id !== savedEventId)
         }));
 
-        // Optional: auto-clear message after 3 seconds
-        setTimeout(() => setMessage(''), 3000);
+        setTimeout(() => setMessage(''), 3000); // Message disappears after 3 seconds
       }
     } catch (err) {
-      console.error("Error removing saved event:", err);
+      console.error("Couldn't remove event:", err);
       setMessage('');
-      setErrorMessage("Failed to remove event. Please try again.");
+      setErrorMessage("Something went wrong. Try again?");
     }
   }
 
-  // Show loading text while the API request is in progress
-  if (loading) return <p>Loading user profile...</p>;
+  // Show while we're waiting for the server to respond
+  if (loading) return <p>Loading your profile...</p>;
 
-  // Show an error message if the request failed
+  // If something failed, show a simple error
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
     <div className="user-homepage">
       <h2>Welcome, {userData.username}!</h2>
 
+      {/* Show location if we have it */}
+      {(userData.latitude && userData.longitude) && (
+        <p>
+          <strong>Your Location:</strong>{' '}
+          Latitude {userData.latitude.toFixed(4)}, Longitude {userData.longitude.toFixed(4)}
+        </p>
+      )}
+
+      {/* Only show the bio if the user has one */}
       {userData.bio && <p><strong>Bio:</strong> {userData.bio}</p>}
 
       <h3>Saved Events</h3>
 
+      {/* Any feedback messages after removing an event */}
       {message && <p className="success-message">{message}</p>}
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
+      {/* Show the list of saved events, or a note if it's empty */}
       {userData.saved_events.length > 0 ? (
         <ul className="event-list">
           {userData.saved_events.map((event) => (
@@ -100,6 +107,7 @@ function UserHomepage({ user }) {
                 />
               )}
 
+              {/* Remove button for this event */}
               <button onClick={() => handleRemove(event.saved_event_id)}>
                 Remove
               </button>
@@ -107,10 +115,10 @@ function UserHomepage({ user }) {
           ))}
         </ul>
       ) : (
-        <p>No saved events yet.</p>
+        <p>You haven’t saved any events yet.</p>
       )}
     </div>
   );
-}  
+}
 
 export default UserHomepage;
