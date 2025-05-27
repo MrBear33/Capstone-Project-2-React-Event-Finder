@@ -124,6 +124,7 @@ def init_routes(app):
         return jsonify({
             "username": user.username,
             "bio": user.bio,
+            "profile_picture": user.profile_picture,
             "saved_events": saved_events,
             "latitude": lat,
             "longitude": lng,
