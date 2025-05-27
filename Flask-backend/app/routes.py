@@ -8,7 +8,7 @@ from app.models import User, Event, Friendship, SavedEvent
 from app.db import db
 from bcrypt import hashpw, gensalt, checkpw
 from dotenv import load_dotenv
-from utils import require_token
+from app.utils import require_token
 
 
 # Load environment variables from .env
