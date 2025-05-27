@@ -87,6 +87,50 @@
   .event-card button:hover {
     background-color: #b71c1c;
   }
+
+  .profile-picture-container {
+    margin: 1em 0;
+    text-align: center;
+  }
+  
+  .profile-picture {
+    max-width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ccc;
+  }
+  
+  .user-info-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .profile-picture-container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
+  
+  .profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ccc;
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .profile-picture:hover {
+    box-shadow: 0 0 10px #999;
+  }
+  
+  .user-details {
+    flex: 1;
+  }
+  
   
   /* Responsive layout for smaller screens */
   @media (max-width: 768px) {

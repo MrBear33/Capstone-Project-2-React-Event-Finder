@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './LandingPage.css'; // ✅ Match this filename
-
+import './LandingPage.css'; // Styling for this page
 function LandingPage() {
   const navigate = useNavigate();
 

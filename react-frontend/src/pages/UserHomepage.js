@@ -1,30 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import './UserHomepage.css'; // Styling for this page
+import './UserHomepage.css'; // Custom styling for this page
 
 function UserHomepage({ user }) {
   // Grab the username from the URL (like /user/jacob)
   const { username } = useParams();
 
-  // Holds all the user info we get from the backend
+  // State to hold all user data returned from the backend
   const [userData, setUserData] = useState(null);
 
-  // Track if we're still waiting for the data or if something went wrong
+  // Track loading and error status while fetching data
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // These show little messages when someone removes an event
+  // Used to display messages when an event is removed
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // This runs when the page first loads to fetch the user's info
+  // Load user profile + saved events when the component mounts
   useEffect(() => {
     async function fetchUserData() {
       try {
-        // Ask the backend for user info + saved events
         const res = await axios.get(`/user/${username}`, {
-          withCredentials: true // Make sure session data is sent
+          withCredentials: true // Needed for session-based auth
         });
         setUserData(res.data);
         setLoading(false);
@@ -38,7 +37,7 @@ function UserHomepage({ user }) {
     fetchUserData();
   }, [username]);
 
-  // Called when the user clicks “Remove” on an event
+  // Handle removing an event from the saved list
   async function handleRemove(savedEventId) {
     try {
       const res = await axios.post(`/remove_saved_event/${savedEventId}`, null, {
@@ -46,16 +45,17 @@ function UserHomepage({ user }) {
       });
 
       if (res.status === 200) {
-        // Success – update the UI and show a message
         setMessage("Event removed!");
         setErrorMessage('');
 
+        // Update local state to remove the event from the list
         setUserData(data => ({
           ...data,
           saved_events: data.saved_events.filter(event => event.saved_event_id !== savedEventId)
         }));
 
-        setTimeout(() => setMessage(''), 3000); // Message disappears after 3 seconds
+        // Clear message after a few seconds
+        setTimeout(() => setMessage(''), 3000);
       }
     } catch (err) {
       console.error("Couldn't remove event:", err);
@@ -64,34 +64,47 @@ function UserHomepage({ user }) {
     }
   }
 
-  // Show while we're waiting for the server to respond
+  // Show a simple message while we load data
   if (loading) return <p>Loading your profile...</p>;
 
-  // If something failed, show a simple error
+  // Show an error if something failed
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
     <div className="user-homepage">
       <h2>Welcome, {userData.username}!</h2>
 
-      {/* Show location if we have it */}
-      {(userData.latitude && userData.longitude) && (
-        <p>
-          <strong>Your Location:</strong>{' '}
-          Latitude {userData.latitude.toFixed(4)}, Longitude {userData.longitude.toFixed(4)}
-        </p>
-      )}
+      {/* Show profile picture on the left, info on the right */}
+      <div className="user-info-section">
+        <div className="profile-picture-container">
+          <img
+            src={userData.profile_picture || "/static/default_user.png"} // Use uploaded pic or fallback
+            alt="Profile"
+            className="profile-picture"
+          />
+        </div>
 
-      {/* Only show the bio if the user has one */}
-      {userData.bio && <p><strong>Bio:</strong> {userData.bio}</p>}
+        <div className="user-details">
+          {/* Show geolocation if available */}
+          {(userData.latitude && userData.longitude) && (
+            <p>
+              <strong>Your Location:</strong>{' '}
+              Latitude {userData.latitude.toFixed(4)}, Longitude {userData.longitude.toFixed(4)}
+            </p>
+          )}
+
+          {/* Show user bio if it's been set */}
+          {userData.bio && <p><strong>Bio:</strong> {userData.bio}</p>}
+        </div>
+      </div>
 
       <h3>Saved Events</h3>
 
-      {/* Any feedback messages after removing an event */}
+      {/* Pop-up messages after actions like removing events */}
       {message && <p className="success-message">{message}</p>}
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
-      {/* Show the list of saved events, or a note if it's empty */}
+      {/* Display all saved events or a note if none exist */}
       {userData.saved_events.length > 0 ? (
         <ul className="event-list">
           {userData.saved_events.map((event) => (
@@ -100,6 +113,7 @@ function UserHomepage({ user }) {
               <p>{event.location}</p>
               <p>{new Date(event.date).toLocaleString()}</p>
 
+              {/* Only show image if one exists */}
               {event.image_url && (
                 <img
                   src={event.image_url}
@@ -107,7 +121,7 @@ function UserHomepage({ user }) {
                 />
               )}
 
-              {/* Remove button for this event */}
+              {/* Let user remove the saved event */}
               <button onClick={() => handleRemove(event.saved_event_id)}>
                 Remove
               </button>
