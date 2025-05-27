@@ -8,6 +8,8 @@ from app.models import User, Event, Friendship, SavedEvent
 from app.db import db
 from bcrypt import hashpw, gensalt, checkpw
 from dotenv import load_dotenv
+from utils import require_token
+
 
 # Load environment variables from .env
 load_dotenv()
@@ -96,30 +98,37 @@ def init_routes(app):
             logging.error(f"Registration error: {e}")
             return jsonify({"error": "Internal server error"}), 500
 
-    # Get user profile and saved events
+    
+    
+# Get user profile and saved events
     @app.route('/user/<username>')
+    @require_token
     def user_homepage(username):
+        # Only allow access if the token’s username matches the URL
+        if username != request.username:
+            return jsonify({"error": "Unauthorized access"}), 403
+
+        # Try to get the user from the DB
         user = User.query.filter_by(username=username).first()
         if not user:
             return jsonify({"error": "User not found"}), 404
-        
 
+        # Build list of saved events
         saved_events = [
-        {
-        "name": e.event.name,
-        "location": e.event.location,
-        "date": e.event.date.isoformat(),
-        "image_url": e.event.image_url,
-        "saved_event_id": e.id  
-        } for e in user.saved_events
-]
+            {
+                "name": e.event.name,
+                "location": e.event.location,
+                "date": e.event.date.isoformat(),
+                "image_url": e.event.image_url,
+                "saved_event_id": e.id
+            }
+            for e in user.saved_events
+        ]
+
+        # Optionally pull geolocation from session (not required)
         geolocation = session.get('geolocation', {})
         lat = geolocation.get('lat')
         lng = geolocation.get('lng')
-
-        logging.debug(f"Session geolocation on homepage: {session.get('geolocation')}")
-        logging.debug(f"Geolocation for {user.username}: lat={lat}, lng={lng}")
-
 
         return jsonify({
             "username": user.username,
@@ -127,8 +136,9 @@ def init_routes(app):
             "profile_picture": user.profile_picture,
             "saved_events": saved_events,
             "latitude": lat,
-            "longitude": lng,
+            "longitude": lng
         }), 200
+
 
     # Fetch nearby events using Ticketmaster API
     @app.route('/events')
