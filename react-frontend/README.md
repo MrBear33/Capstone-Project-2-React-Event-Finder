@@ -1,70 +1,122 @@
-# Getting Started with Create React App
+EVENT TRACKER 
+Project Overview
+Event Tracker is a full-stack web application that helps users discover events near them, save their favorites, and manage their profile and friend list.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Features include:
 
-## Available Scripts
+🔹 User Profiles – Create, update, and customize your own profile.
 
-In the project directory, you can run:
+🔹 Save/Unsave Events – Keep track of events that catch your interest.
 
-### `npm start`
+🔹 Real-Time Event Discovery – Fetches nearby event data using the Ticketmaster API.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+🔹 Geolocation-Based Recommendations – Uses Google Geolocation API to show you what's happening nearby.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+🔹 Friend System – Add friends and view their saved events.
 
-### `npm test`
+🔹 Profile Pictures – Upload your own image or use a default avatar.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+ Deployment Link
 
-### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+ Technologies Used
+Backend:
+Flask – Lightweight Python web framework.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Flask-SQLAlchemy – ORM to manage and query the database.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+PostgreSQL – Hosted via Supabase for easy cloud access.
 
-### `npm run eject`
+Flask-Login – Handles user authentication.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Bcrypt – Password hashing for secure storage.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Frontend:
+React – Rewritten from Flask templates to a modern SPA frontend.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+React Router v5 – Client-side routing.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Axios – Communicates with the Flask API.
 
-## Learn More
+CSS – Clean custom styling with responsive layout.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+APIs:
+Google Geolocation API – Finds your location for better recommendations.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Ticketmaster API – Pulls event data like concerts, sports, and more.
 
-### Code Splitting
+🗺 ERD (Entity Relationship Diagram)
+Click to view database diagram
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+ Installation Instructions
 
-### Analyzing the Bundle Size
+### 1️ Clone the Repository
+git clone https://github.com/MrBear33/Event-Tracker-React-Flask.git
+cd event-tracker
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### 2️ Set up the Backend
+cd backend
 
-### Making a Progressive Web App
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+# Install backend dependencies
+pip install -r requirements.txt
 
-### Advanced Configuration
+# Initialize the database
+flask db init
+flask db migrate -m "Initial migration"
+flask db upgrade
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+# Run the backend
+flask run
 
-### Deployment
+### 3️ Set up the Frontend
+cd ../frontend
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+# Install frontend dependencies
+npm install
 
-### `npm run build` fails to minify
+# Start the React development server
+npm start
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+ Usage
+Sign up or log in to access your personalized dashboard.
+
+Browse events near your location pulled from the Ticketmaster API.
+
+Save events you’re interested in, and remove them later if needed.
+
+Edit your profile to include a bio or upload a profile picture.
+
+Add friends by username and view their saved events.
+
+A default profile image will be shown if no image is uploaded.
+
+Key Features
+ User authentication (signup/login/logout)
+
+ Personalized event discovery
+
+ Save & unsave events
+
+ Upload or fallback profile picture
+
+ Add/view friends 
+
+ To Contribute:
+
+Fork the repository
+
+Create a new branch: git checkout -b feature-branch
+
+Make your changes and commit: git commit -m "Add new feature"
+
+Push the branch: git push origin feature-branch
+
+Open a Pull Request
+
+📬 Contact Info
+📧 jacob33sandoval33@gmail.com
+🔗 GitHub @MrBear33
