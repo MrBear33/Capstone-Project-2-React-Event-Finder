@@ -39,7 +39,7 @@ def init_routes(app):
                     'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
                 }, JWT_SECRET_KEY, algorithm='HS256')
 
-                # Optionally get location from Google
+                # get location from Google
                 geo_res = requests.post(
                     f"https://www.googleapis.com/geolocation/v1/geolocate?key={GOOGLE_API_KEY}",
                     json={"considerIp": True}
@@ -70,7 +70,7 @@ def init_routes(app):
         if User.query.filter_by(email=email).first():
             return jsonify({"error": "Email already in use"}), 400
 
-        # Password complexity rules
+        # Password rules (complexity requirements)
         errors = []
         if len(password) < 8:
             errors.append("at least 8 characters")
@@ -161,7 +161,7 @@ def init_routes(app):
 
     # SAVE EVENT
     @app.route('/save_event/<string:api_event_id>', methods=['POST'])
-    @login_required
+    @require_token
     def save_event(api_event_id):
         try:
             response = requests.get(
@@ -199,7 +199,7 @@ def init_routes(app):
 
     # REMOVE EVENT
     @app.route('/remove_saved_event/<int:saved_event_id>', methods=['POST'])
-    @login_required
+    @require_token
     def remove_saved_event(saved_event_id):
         try:
             saved_event = SavedEvent.query.filter_by(id=saved_event_id, user_id=current_user.id).first()
@@ -215,7 +215,7 @@ def init_routes(app):
 
     # ADD FRIEND
     @app.route('/add_friend', methods=['POST'])
-    @login_required
+    @require_token
     def add_friend():
         friend_username = request.get_json().get('username')
         friend = User.query.filter_by(username=friend_username).first()
@@ -237,7 +237,7 @@ def init_routes(app):
 
     # FRIENDS LIST
     @app.route('/friends')
-    @login_required
+    @require_token
     def friends():
         friends = User.query.join(Friendship, User.id == Friendship.friend_id)\
             .filter(Friendship.user_id == current_user.id).all()
@@ -247,7 +247,7 @@ def init_routes(app):
 
     # EDIT PROFILE
     @app.route('/edit-profile', methods=['POST'])
-    @login_required
+    @require_token
     def edit_profile():
         data = request.form
         bio = data.get('bio')
