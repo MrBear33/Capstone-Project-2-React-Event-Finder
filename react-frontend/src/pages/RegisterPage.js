@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './PageStyles.css'; // Import CSS for styling
 
-// Base URL for Flask backend (use env variable or fallback to local)
+// Base URL for Flask backend (live or local)
 const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
 function RegisterPage() {
@@ -33,14 +33,18 @@ function RegisterPage() {
 
     try {
       const res = await axios.post(
-        `${BASE_URL}/register`,  // Updated to full backend path
+        `${BASE_URL}/register`,  // Backend route
         formData,
         { withCredentials: true }
       );
 
-      if (res.status === 201) {
-        // If registration successful, redirect to login page
+      console.log("Register response:", res);  // Log response for debugging
+
+      // If registration succeeded, redirect to login
+      if (res.status >= 200 && res.status < 300) {
         navigate('/login');
+      } else {
+        setError('Something went wrong. Please try again.');
       }
     } catch (err) {
       // If backend returns an error, display it

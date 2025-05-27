@@ -16,7 +16,12 @@ Features include:
 
 🔹 Profile Pictures – Upload your own image or use a default avatar.
 
- Deployment Link
+ ### Deployment Link:
+
+https://capstone-project-2-react-front-end.onrender.com
+
+### Backend API:
+https://capstone-project-2-react-event-finder.onrender.com
 
 
  Technologies Used
