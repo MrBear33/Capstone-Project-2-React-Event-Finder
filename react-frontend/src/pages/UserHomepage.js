@@ -1,36 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import './UserHomepage.css'; // Custom styling for this page
-
-// Use the live backend if deployed, otherwise default to local for dev
-const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+import axios from '../axiosWithToken';              // Custom axios instance with token
+import './UserHomepage.css';                         // Styling for this page
 
 function UserHomepage({ user }) {
-  // Grab the username from the URL (like /user/jacob)
+  // Grab the username from the URL 
   const { username } = useParams();
 
-  // State to hold all user data returned from the backend
+  // Store user data like bio, saved events, etc.
   const [userData, setUserData] = useState(null);
 
-  // Track loading and error status while fetching data
+  // For tracking loading/error states
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Used to display messages when an event is removed
+  // Feedback messages after removing an event
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Load user profile + saved events when the component mounts
+  // Fetch user info on component mount
   useEffect(() => {
     async function fetchUserData() {
       try {
-        // Call the backend API to fetch the user’s info
-        const res = await axios.get(`${BASE_URL}/user/${username}`, {
-          withCredentials: true // Needed for session-based auth
-        });
-        setUserData(res.data);
-        setLoading(false);
+        const res = await axios.get(`/user/${username}`);
+        setUserData(res.data);        // Store what the backend sent
+        setLoading(false);            // Stop showing "loading"
       } catch (err) {
         console.error("Couldn't load profile:", err);
         setError('Couldn’t load your profile right now.');
@@ -41,26 +35,23 @@ function UserHomepage({ user }) {
     fetchUserData();
   }, [username]);
 
-  // Handle removing an event from the saved list
+  // Remove an event from the user's saved list
   async function handleRemove(savedEventId) {
     try {
-      const res = await axios.post(`${BASE_URL}/remove_saved_event/${savedEventId}`, null, {
-        withCredentials: true
-      });
-
+      const res = await axios.post(`/remove_saved_event/${savedEventId}`);
       if (res.status === 200) {
-        // Show a quick success message
         setMessage("Event removed!");
         setErrorMessage('');
 
-        // Update local state to remove the event from the list
+        // Update UI by removing the deleted event
         setUserData(data => ({
           ...data,
-          saved_events: data.saved_events.filter(event => event.saved_event_id !== savedEventId)
+          saved_events: data.saved_events.filter(
+            event => event.saved_event_id !== savedEventId
+          )
         }));
 
-        // Clear the message after 3 seconds
-        setTimeout(() => setMessage(''), 3000);
+        setTimeout(() => setMessage(''), 3000); // Clear message after 3 seconds
       }
     } catch (err) {
       console.error("Couldn't remove event:", err);
@@ -69,56 +60,56 @@ function UserHomepage({ user }) {
     }
   }
 
-  // Show while we're waiting for the server to respond
+  // While we wait for the backend
   if (loading) return <p>Loading your profile...</p>;
 
-  // If something failed, show a simple error
+  // Show error if one occurred
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
     <div className="user-homepage">
       <h2>Welcome, {userData.username}!</h2>
 
-      {/* Show profile picture on the left, info on the right */}
+      {/* Profile section with image and location/bio info */}
       <div className="user-info-section">
         <div className="profile-picture-container">
           <img
-            src={userData.profile_picture || "/static/default_user.png"} // Use uploaded pic or fallback
+            src={userData.profile_picture || "/static/default_user.png"}
             alt="Profile"
             className="profile-picture"
           />
         </div>
 
         <div className="user-details">
-          {/* Show geolocation if available */}
-          {(userData.latitude && userData.longitude) && (
+          {userData.latitude && userData.longitude && (
             <p>
               <strong>Your Location:</strong>{' '}
               Latitude {userData.latitude.toFixed(4)}, Longitude {userData.longitude.toFixed(4)}
             </p>
           )}
 
-          {/* Show user bio if it's been set */}
-          {userData.bio && <p><strong>Bio:</strong> {userData.bio}</p>}
+          {userData.bio && (
+            <p><strong>Bio:</strong> {userData.bio}</p>
+          )}
         </div>
       </div>
 
       <h3>Saved Events</h3>
 
-      {/* Pop-up messages after actions like removing events */}
+      {/* Feedback messages */}
       {message && <p className="success-message">{message}</p>}
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
-      {/* Display all saved events or a note if none exist */}
+      {/* Show list of saved events or fallback */}
       {userData.saved_events.length > 0 ? (
         <ul className="event-list">
-          {userData.saved_events.map((event) => (
+          {userData.saved_events.map(event => (
             <li key={event.saved_event_id} className="event-card">
               <p><strong>{event.name}</strong></p>
               <p>{event.location}</p>
               <p>{new Date(event.date).toLocaleString()}</p>
 
-              {/* Only show image if one exists */}
+              {/* Show event image if it exists */}
               {event.image_url && (
                 <img
                   src={event.image_url}
@@ -126,7 +117,7 @@ function UserHomepage({ user }) {
                 />
               )}
 
-              {/* Let user remove the saved event */}
+              {/* Button to remove the saved event */}
               <button onClick={() => handleRemove(event.saved_event_id)}>
                 Remove
               </button>

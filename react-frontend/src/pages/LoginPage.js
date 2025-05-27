@@ -1,49 +1,56 @@
-import React, { useState } from 'react';               // useState for handling form and error state
-import axios from 'axios';                             // Axios for making HTTP requests
-import { useNavigate } from 'react-router-dom';        // For redirecting after login
-import './PageStyles.css';                             // Import CSS for styling
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import './PageStyles.css'; // Import CSS for styling
 
-// Base URL for the Flask backend (live or local)
+// Base URL for the Flask backend
 const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
 function LoginPage({ setUser }) {
-  // Stores form input values
+  // Store form inputs
   const [formData, setFormData] = useState({ username: '', password: '' });
 
-  // Stores any login error messages
+  // Show any error messages if login fails
   const [error, setError] = useState('');
 
-  // Used to redirect the user after login
+  // Used to redirect user after login
   const navigate = useNavigate();
 
-  // Updates form values as user types
+  // Update form fields as the user types
   const handleChange = evt => {
     const { name, value } = evt.target;
     setFormData(data => ({ ...data, [name]: value }));
   };
 
-  // Handles form submission
+  // Handle form submission
   const handleSubmit = async evt => {
-    evt.preventDefault();            // Prevent full page reload
-    setError('');                    // Clear previous errors
+    evt.preventDefault();    // Stop page from reloading
+    setError('');            // Clear any previous errors
 
     try {
-      // Send login request to Flask backend
+      // Call the backend with username and password
       const res = await axios.post(
-        `${BASE_URL}/login`,         // Updated to use full backend URL
-        formData,                    // Includes username and password
-        { withCredentials: true }    // Needed to include session cookie
+        `${BASE_URL}/login`,
+        formData
       );
 
-      // If login is successful
-      if (res.status === 200) {
-        const { username } = res.data;   // Get username from response
-        setUser(username);               // Save to App state
-        navigate(`/user/${username}`);   // Redirect to user's homepage
+      // If login worked, we get a token back
+      if (res.status === 200 && res.data.token) {
+        const token = res.data.token;
+
+        // Save token in localStorage so we can use it on other pages
+        localStorage.setItem('token', token);
+
+        // Set the logged in user for React state
+        setUser(formData.username);
+
+        // Send them to their homepage
+        navigate(`/user/${formData.username}`);
+      } else {
+        setError('Login failed — please try again.');
       }
     } catch (err) {
-      // Show error if login fails
-      console.error(err);
+      console.error("Login error:", err);
       setError('Invalid username or password.');
     }
   };
@@ -52,10 +59,10 @@ function LoginPage({ setUser }) {
     <div className="page-container">
       <h2>Login</h2>
 
-      {/* Show error message if present */}
+      {/* If there’s an error, show it up top */}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* Login form */}
+      {/* Simple login form */}
       <form onSubmit={handleSubmit}>
         <label>
           Username:
@@ -86,4 +93,4 @@ function LoginPage({ setUser }) {
   );
 }
 
-export default LoginPage;   // Make the component usable in App.js
+export default LoginPage;

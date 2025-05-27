@@ -1,52 +1,51 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import './PageStyles.css'; // Import CSS for styling
-
-// Set base URL for backend (live or local)
-const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+import axios from '../axiosWithToken';             // Token-aware axios instance
+import './PageStyles.css';                         // Import CSS for styling
 
 function EditProfile({ user }) {
-  const [bio, setBio] = useState('');               // New bio input
-  const [image, setImage] = useState(null);         // New profile picture file
-  const [success, setSuccess] = useState('');       // Message for success
-  const [error, setError] = useState('');           // Message for error
+  // State for new bio and profile picture
+  const [bio, setBio] = useState('');
+  const [image, setImage] = useState(null);
 
-  // Handle bio text input
+  // Track success or error messages
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
+  // Update bio text
   const handleBioChange = evt => {
     setBio(evt.target.value);
   };
 
-  // Handle file input (image upload)
+  // Update image file
   const handleImageChange = evt => {
     setImage(evt.target.files[0]);
   };
 
-  // Submit bio and image to Flask backend
+  // Send updated profile to the backend
   const handleSubmit = async evt => {
-    evt.preventDefault();        // Prevent full page reload
-    setError('');                // Clear old error
-    setSuccess('');              // Clear old success message
+    evt.preventDefault();     // Prevent form refresh
+    setError('');
+    setSuccess('');
 
-    const formData = new FormData();         // Use FormData for file upload
-    formData.append('bio', bio);             // Add bio to payload
+    const formData = new FormData();        // Needed for file upload
+    formData.append('bio', bio);
     if (image) {
-      formData.append('profile_picture', image);  // Add image if one is selected
+      formData.append('profile_picture', image);
     }
 
     try {
-      const res = await axios.post(`${BASE_URL}/edit-profile`, formData, {
-        withCredentials: true,               // Needed for auth
+      const res = await axios.post('/edit-profile', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'   // Required for file upload
+          'Content-Type': 'multipart/form-data'   // Tell Flask it’s a file upload
         }
       });
 
       if (res.status === 200) {
-        setSuccess('Profile updated!');      // Show success message
+        setSuccess('Profile updated!');
       }
     } catch (err) {
       console.error("Error updating profile:", err);
-      setError('Could not update profile.'); // Show error if failed
+      setError('Could not update profile.');
     }
   };
 
@@ -54,11 +53,11 @@ function EditProfile({ user }) {
     <div className="page-container">
       <h2>Edit Profile</h2>
 
-      {/* Success or error message display */}
+      {/* Feedback if update worked or not */}
       {success && <p style={{ color: 'green' }}>{success}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* Form to update bio and profile picture */}
+      {/* Bio + image form */}
       <form onSubmit={handleSubmit} encType="multipart/form-data">
         <div>
           <label htmlFor="bio">Bio:</label><br />

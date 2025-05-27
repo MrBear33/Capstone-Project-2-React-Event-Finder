@@ -1,24 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import './PageStyles.css'; // Import CSS for styling
-
-// Base URL for Flask backend (live or local fallback)
-const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+import axios from '../axiosWithToken';             // Use axios that auto-sends JWT
+import './PageStyles.css';                         // Import CSS for styling
 
 function FriendsPage({ user }) {
-  const [friends, setFriends] = useState([]);     // List of current friends
-  const [newFriend, setNewFriend] = useState(''); // Input for adding a friend
-  const [message, setMessage] = useState('');     // Success message
-  const [error, setError] = useState('');         // Error message
+  const [friends, setFriends] = useState([]);        // User’s friend list
+  const [newFriend, setNewFriend] = useState('');    // Input for adding a friend
+  const [message, setMessage] = useState('');        // Success message
+  const [error, setError] = useState('');            // Error message
 
-  // Fetch current user's friends on mount
+  // On page load, get the current user's friends
   useEffect(() => {
     async function fetchFriends() {
       try {
-        const res = await axios.get(`${BASE_URL}/friends`, {
-          withCredentials: true
-        });
-        setFriends(res.data.friends); // List of { username, email }
+        const res = await axios.get('/friends');     // Token auto-included
+        setFriends(res.data.friends);                // Expect list of { username, email }
       } catch (err) {
         console.error("Error fetching friends:", err);
         setError("Could not load friends.");
@@ -28,28 +23,26 @@ function FriendsPage({ user }) {
     fetchFriends();
   }, []);
 
-  // Handle adding a new friend by username
+  // Add a new friend by username
   async function handleAddFriend(evt) {
-    evt.preventDefault();     // Stop page from reloading
-    setMessage('');           // Clear previous success
-    setError('');             // Clear previous error
+    evt.preventDefault();     // Stop the form from reloading the page
+    setMessage('');
+    setError('');
 
     try {
-      const res = await axios.post(`${BASE_URL}/add_friend`, { username: newFriend }, {
-        withCredentials: true
-      });
+      const res = await axios.post('/add_friend', { username: newFriend });  // Token auto-included
 
       if (res.status === 201 || res.status === 200) {
-        setMessage(res.data.message);                           // Show success
-        setNewFriend('');                                       // Clear input
-        setFriends(f => [...f, { username: newFriend }]);       // Optimistically update UI
+        setMessage(res.data.message);                  // Show success message
+        setNewFriend('');                              // Clear input field
+        setFriends(f => [...f, { username: newFriend }]); // Optimistically update UI
       }
     } catch (err) {
       console.error("Error adding friend:", err);
       if (err.response?.data?.error) {
-        setError(err.response.data.error);                      // Specific error message
+        setError(err.response.data.error);             // Use server error if provided
       } else {
-        setError("Could not add friend.");                      // Generic fallback
+        setError("Could not add friend.");
       }
     }
   }
@@ -58,7 +51,7 @@ function FriendsPage({ user }) {
     <div className="page-container">
       <h2>Your Friends</h2>
 
-      {/* Show list of current friends */}
+      {/* Show friend list or a fallback */}
       {friends.length > 0 ? (
         <ul>
           {friends.map((friend, idx) => (
@@ -74,7 +67,7 @@ function FriendsPage({ user }) {
 
       <h3>Add a Friend</h3>
 
-      {/* Show messages for success or error */}
+      {/* Show result messages */}
       {message && <p style={{ color: 'green' }}>{message}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 

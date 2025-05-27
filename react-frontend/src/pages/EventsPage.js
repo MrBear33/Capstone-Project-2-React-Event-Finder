@@ -1,23 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import './PageStyles.css'; // Import CSS for styling
-
-// Use environment variable for backend (or local fallback)
-const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+import axios from '../axiosWithToken';             // Use custom axios instance with token
+import './PageStyles.css';                         // Import CSS for styling
 
 function EventsPage({ user }) {
-  const [events, setEvents] = useState([]);       // Fetched event list
-  const [error, setError] = useState('');         // Error state
-  const [loading, setLoading] = useState(true);   // Loading state
-  const [savedIds, setSavedIds] = useState(new Set()); // Tracks saved event IDs
+  const [events, setEvents] = useState([]);        // Fetched event list
+  const [error, setError] = useState('');          // Error state
+  const [loading, setLoading] = useState(true);    // Loading state
+  const [savedIds, setSavedIds] = useState(new Set()); // Track saved event IDs
 
-  // Fetch events from backend on mount
+  // When the page loads, go fetch events from the backend
   useEffect(() => {
     async function fetchEvents() {
       try {
-        const res = await axios.get(`${BASE_URL}/events`, {
-          withCredentials: true
-        });
+        const res = await axios.get('/events');    // Token gets auto-attached
         setEvents(res.data);
         setLoading(false);
       } catch (err) {
@@ -30,15 +25,13 @@ function EventsPage({ user }) {
     fetchEvents();
   }, []);
 
-  // Handle saving an event
+  // Save an event to the user's account
   async function handleSave(apiEventId) {
     try {
-      const res = await axios.post(`${BASE_URL}/save_event/${apiEventId}`, null, {
-        withCredentials: true
-      });
-
+      const res = await axios.post(`/save_event/${apiEventId}`);  // Token auto-added
       if (res.status === 201 || res.status === 200) {
-        setSavedIds(new Set([...savedIds, apiEventId])); // Update saved set
+        // Keep track of which event IDs were saved
+        setSavedIds(new Set([...savedIds, apiEventId]));
       }
     } catch (err) {
       console.error("Failed to save event:", err);
@@ -46,6 +39,7 @@ function EventsPage({ user }) {
     }
   }
 
+  // Simple loading and error states
   if (loading) return <p>Loading events...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
@@ -53,6 +47,7 @@ function EventsPage({ user }) {
     <div className="page-container">
       <h2>Nearby Events</h2>
 
+      {/* If there are no events at all */}
       {events.length === 0 ? (
         <p>No events found in your area.</p>
       ) : (
@@ -63,7 +58,7 @@ function EventsPage({ user }) {
               <p>{event._embedded?.venues?.[0]?.name || "Unknown location"}</p>
               <p>{new Date(event.dates.start.dateTime).toLocaleString()}</p>
 
-              {/* Show event image if available */}
+              {/* Show image if one exists */}
               {event.images?.[0]?.url && (
                 <img
                   src={event.images[0].url}
@@ -72,7 +67,7 @@ function EventsPage({ user }) {
                 />
               )}
 
-              {/* Save button */}
+              {/* Save button gets disabled if already saved */}
               <div>
                 {savedIds.has(event.id) ? (
                   <button disabled>Saved</button>

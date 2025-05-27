@@ -14,44 +14,36 @@ import EditProfile from './pages/EditProfile';
 import Navbar from './pages/Navbar';
 
 function App() {
-  const [user, setUser] = useState(null);       // Stores logged-in user
-  const navigate = useNavigate();               // Navigation hook for redirects
+  const [user, setUser] = useState(null);       // Stores logged-in user's username
+  const navigate = useNavigate();               // For redirecting users on logout
 
-  // Check login session on page load
+  // When the app loads, check for a saved token and decode it
   useEffect(() => {
-    fetch("http://localhost:5000/check-auth", {
-      credentials: "include"
-    })
-      .then(res => {
-        if (!res.ok) throw new Error("Not authenticated");
-        return res.json();
-      })
-      .then(data => {
-        setUser(data.username);  // Save user if logged in
-      })
-      .catch(() => {
-        setUser(null);           // Clear user if not logged in
-      });
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        // Decode the token to get the username
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUser(payload.username);
+      } catch (err) {
+        console.error("Failed to decode token:", err);
+        setUser(null); // If decoding fails, clear user
+      }
+    } else {
+      setUser(null); // No token found, no user
+    }
   }, []);
 
-  // Logs the user out and clears session
-  const handleLogout = async () => {
-    try {
-      await fetch('/logout', {
-        method: 'GET',
-        credentials: 'include'
-      });
-
-      setUser(null);           // Clear user state
-      navigate('/');           // Redirect to landing or login
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
+  // Logs the user out by clearing the token and user state
+  const handleLogout = () => {
+    localStorage.removeItem('token'); // Get rid of the token
+    setUser(null);                    // Reset app state
+    navigate('/');                    // Redirect to landing page
   };
 
   return (
     <div>
-      {/* Always show navbar and pass user + logout handler */}
+      {/* Always show navbar and pass user info + logout handler */}
       <Navbar user={user} onLogout={handleLogout} />
 
       <Routes>
