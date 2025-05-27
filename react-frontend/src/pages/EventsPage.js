@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './PageStyles.css'; // Import CSS for styling
 
+// Use environment variable for backend (or local fallback)
+const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
 function EventsPage({ user }) {
   const [events, setEvents] = useState([]);       // Fetched event list
   const [error, setError] = useState('');         // Error state
@@ -12,7 +15,7 @@ function EventsPage({ user }) {
   useEffect(() => {
     async function fetchEvents() {
       try {
-        const res = await axios.get('/events', {
+        const res = await axios.get(`${BASE_URL}/events`, {
           withCredentials: true
         });
         setEvents(res.data);
@@ -30,7 +33,7 @@ function EventsPage({ user }) {
   // Handle saving an event
   async function handleSave(apiEventId) {
     try {
-      const res = await axios.post(`/save_event/${apiEventId}`, null, {
+      const res = await axios.post(`${BASE_URL}/save_event/${apiEventId}`, null, {
         withCredentials: true
       });
 

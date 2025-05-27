@@ -3,6 +3,9 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import './UserHomepage.css'; // Custom styling for this page
 
+// Use the live backend if deployed, otherwise default to local for dev
+const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
 function UserHomepage({ user }) {
   // Grab the username from the URL (like /user/jacob)
   const { username } = useParams();
@@ -22,7 +25,8 @@ function UserHomepage({ user }) {
   useEffect(() => {
     async function fetchUserData() {
       try {
-        const res = await axios.get(`/user/${username}`, {
+        // Call the backend API to fetch the user’s info
+        const res = await axios.get(`${BASE_URL}/user/${username}`, {
           withCredentials: true // Needed for session-based auth
         });
         setUserData(res.data);
@@ -40,11 +44,12 @@ function UserHomepage({ user }) {
   // Handle removing an event from the saved list
   async function handleRemove(savedEventId) {
     try {
-      const res = await axios.post(`/remove_saved_event/${savedEventId}`, null, {
+      const res = await axios.post(`${BASE_URL}/remove_saved_event/${savedEventId}`, null, {
         withCredentials: true
       });
 
       if (res.status === 200) {
+        // Show a quick success message
         setMessage("Event removed!");
         setErrorMessage('');
 
@@ -54,7 +59,7 @@ function UserHomepage({ user }) {
           saved_events: data.saved_events.filter(event => event.saved_event_id !== savedEventId)
         }));
 
-        // Clear message after a few seconds
+        // Clear the message after 3 seconds
         setTimeout(() => setMessage(''), 3000);
       }
     } catch (err) {
@@ -64,10 +69,10 @@ function UserHomepage({ user }) {
     }
   }
 
-  // Show a simple message while we load data
+  // Show while we're waiting for the server to respond
   if (loading) return <p>Loading your profile...</p>;
 
-  // Show an error if something failed
+  // If something failed, show a simple error
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (

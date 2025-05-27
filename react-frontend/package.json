@@ -2,7 +2,7 @@
   "name": "capstone-project-two-fee810e2023d447a81148f036c3bde6a",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:5000",
+  
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/user-event": "^13.5.0",

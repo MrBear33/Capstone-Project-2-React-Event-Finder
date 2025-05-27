@@ -3,6 +3,9 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './PageStyles.css'; // Import CSS for styling
 
+// Base URL for Flask backend (use env variable or fallback to local)
+const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
 function RegisterPage() {
   // Stores form input values for registration
   const [formData, setFormData] = useState({
@@ -30,7 +33,7 @@ function RegisterPage() {
 
     try {
       const res = await axios.post(
-        '/register',       // Flask endpoint
+        `${BASE_URL}/register`,  // Updated to full backend path
         formData,
         { withCredentials: true }
       );

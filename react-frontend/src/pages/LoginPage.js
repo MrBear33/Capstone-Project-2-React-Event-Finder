@@ -1,7 +1,10 @@
 import React, { useState } from 'react';               // useState for handling form and error state
 import axios from 'axios';                             // Axios for making HTTP requests
 import { useNavigate } from 'react-router-dom';        // For redirecting after login
-import './PageStyles.css'; // Import CSS for styling
+import './PageStyles.css';                             // Import CSS for styling
+
+// Base URL for the Flask backend (live or local)
+const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
 function LoginPage({ setUser }) {
   // Stores form input values
@@ -27,7 +30,7 @@ function LoginPage({ setUser }) {
     try {
       // Send login request to Flask backend
       const res = await axios.post(
-        '/login',                    // Flask login route
+        `${BASE_URL}/login`,         // Updated to use full backend URL
         formData,                    // Includes username and password
         { withCredentials: true }    // Needed to include session cookie
       );
