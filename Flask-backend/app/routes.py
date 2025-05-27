@@ -5,7 +5,6 @@ import requests
 import jwt
 import datetime
 from flask import request, jsonify, session
-from flask_login import login_required, current_user
 from app.models import User, Event, Friendship, SavedEvent
 from app.db import db
 from bcrypt import hashpw, gensalt, checkpw
@@ -18,12 +17,14 @@ GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 TICKETMASTER_API_KEY = os.getenv('TICKETMASTER_API_KEY')
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
 
-# Set up logging for easier debugging
+# Enable console logging
 logging.basicConfig(level=logging.DEBUG)
 
 
 def init_routes(app):
-    # LOGIN - JWT-based
+    # ----------------------------
+    # LOGIN: Issue JWT on success
+    # ----------------------------
     @app.route('/login', methods=['POST'])
     def login():
         data = request.get_json()
@@ -33,13 +34,13 @@ def init_routes(app):
         user = User.query.filter_by(username=username).first()
         if user and checkpw(password, user.password.encode('utf-8')):
             try:
-                # Generate a JWT that lasts 1 hour
+                # Generate JWT
                 token = jwt.encode({
                     'username': user.username,
                     'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
                 }, JWT_SECRET_KEY, algorithm='HS256')
 
-                # get location from Google
+                # Try to save geolocation from Google
                 geo_res = requests.post(
                     f"https://www.googleapis.com/geolocation/v1/geolocate?key={GOOGLE_API_KEY}",
                     json={"considerIp": True}
@@ -50,14 +51,15 @@ def init_routes(app):
                         session['geolocation'] = location_data
 
                 return jsonify({"token": token, "username": user.username}), 200
-
             except Exception as e:
                 logging.error(f"Login error: {e}")
                 return jsonify({"error": "Login failed"}), 500
 
         return jsonify({"error": "Invalid username or password"}), 401
 
-    # REGISTER - with password requirement messages
+    # ----------------------------------
+    # REGISTER: Enforce password rules
+    # ----------------------------------
     @app.route('/register', methods=['POST'])
     def register():
         data = request.get_json()
@@ -70,7 +72,6 @@ def init_routes(app):
         if User.query.filter_by(email=email).first():
             return jsonify({"error": "Email already in use"}), 400
 
-        # Password rules (complexity requirements)
         errors = []
         if len(password) < 8:
             errors.append("at least 8 characters")
@@ -97,7 +98,9 @@ def init_routes(app):
             logging.error(f"Registration error: {e}")
             return jsonify({"error": "Internal server error"}), 500
 
-    # USER HOMEPAGE - token protected
+    # ----------------------------------------
+    # USER HOMEPAGE - protected by JWT token
+    # ----------------------------------------
     @app.route('/user/<username>')
     @require_token
     def user_homepage(username):
@@ -108,16 +111,13 @@ def init_routes(app):
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        saved_events = [
-            {
-                "name": e.event.name,
-                "location": e.event.location,
-                "date": e.event.date.isoformat(),
-                "image_url": e.event.image_url,
-                "saved_event_id": e.id
-            }
-            for e in user.saved_events
-        ]
+        saved_events = [{
+            "name": e.event.name,
+            "location": e.event.location,
+            "date": e.event.date.isoformat(),
+            "image_url": e.event.image_url,
+            "saved_event_id": e.id
+        } for e in user.saved_events]
 
         geo = session.get('geolocation', {})
         return jsonify({
@@ -129,8 +129,11 @@ def init_routes(app):
             "longitude": geo.get('lng')
         }), 200
 
-    # EVENTS (public)
+    # --------------------------
+    # EVENTS (requires location)
+    # --------------------------
     @app.route('/events')
+    @require_token
     def events():
         geolocation = session.get('geolocation')
         if not geolocation:
@@ -159,50 +162,61 @@ def init_routes(app):
 
         return jsonify(events), 200
 
-    # SAVE EVENT
+    # ----------------------
+    # SAVE EVENT to account
+    # ----------------------
     @app.route('/save_event/<string:api_event_id>', methods=['POST'])
     @require_token
     def save_event(api_event_id):
+        user = User.query.filter_by(username=request.username).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
         try:
-            response = requests.get(
+            res = requests.get(
                 f"https://app.ticketmaster.com/discovery/v2/events/{api_event_id}.json",
                 params={"apikey": TICKETMASTER_API_KEY}
             )
-            if response.status_code != 200:
+            if res.status_code != 200:
                 return jsonify({"error": "Event lookup failed"}), 400
 
-            event_data = response.json()
+            event_data = res.json()
             event = Event.query.filter_by(api_event_id=api_event_id).first()
             if not event:
-                image_url = event_data.get('images', [{}])[0].get('url', '')
                 event = Event(
                     api_event_id=api_event_id,
                     name=event_data.get('name', 'Unknown Event'),
                     location=event_data.get('_embedded', {}).get('venues', [{}])[0].get('name', 'Unknown Location'),
                     date=event_data.get('dates', {}).get('start', {}).get('dateTime'),
                     category=event_data.get('classifications', [{}])[0].get('segment', {}).get('name', 'Unknown Category'),
-                    image_url=image_url
+                    image_url=event_data.get('images', [{}])[0].get('url', '')
                 )
                 db.session.add(event)
                 db.session.commit()
 
-            if SavedEvent.query.filter_by(user_id=current_user.id, event_id=event.id).first():
+            if SavedEvent.query.filter_by(user_id=user.id, event_id=event.id).first():
                 return jsonify({"message": "Already saved"}), 200
 
-            new_saved_event = SavedEvent(user_id=current_user.id, event_id=event.id)
-            db.session.add(new_saved_event)
+            saved = SavedEvent(user_id=user.id, event_id=event.id)
+            db.session.add(saved)
             db.session.commit()
             return jsonify({"message": "Event saved"}), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": "Could not save event"}), 500
 
-    # REMOVE EVENT
+    # ----------------------
+    # REMOVE SAVED EVENT
+    # ----------------------
     @app.route('/remove_saved_event/<int:saved_event_id>', methods=['POST'])
     @require_token
     def remove_saved_event(saved_event_id):
+        user = User.query.filter_by(username=request.username).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
         try:
-            saved_event = SavedEvent.query.filter_by(id=saved_event_id, user_id=current_user.id).first()
+            saved_event = SavedEvent.query.filter_by(id=saved_event_id, user_id=user.id).first()
             if not saved_event:
                 return jsonify({"error": "Event not found"}), 404
 
@@ -213,21 +227,24 @@ def init_routes(app):
             db.session.rollback()
             return jsonify({"error": "Failed to remove event"}), 500
 
+    # ----------------------
     # ADD FRIEND
+    # ----------------------
     @app.route('/add_friend', methods=['POST'])
     @require_token
     def add_friend():
+        user = User.query.filter_by(username=request.username).first()
         friend_username = request.get_json().get('username')
         friend = User.query.filter_by(username=friend_username).first()
 
-        if not friend or friend.id == current_user.id:
+        if not friend or friend.id == user.id:
             return jsonify({"error": "Invalid friend"}), 400
 
-        if Friendship.query.filter_by(user_id=current_user.id, friend_id=friend.id).first():
+        if Friendship.query.filter_by(user_id=user.id, friend_id=friend.id).first():
             return jsonify({"message": "Already friends"}), 200
 
         try:
-            new_friendship = Friendship(user_id=current_user.id, friend_id=friend.id)
+            new_friendship = Friendship(user_id=user.id, friend_id=friend.id)
             db.session.add(new_friendship)
             db.session.commit()
             return jsonify({"message": f"Friend added: {friend.username}"}), 201
@@ -235,24 +252,29 @@ def init_routes(app):
             db.session.rollback()
             return jsonify({"error": "Could not add friend"}), 500
 
-    # FRIENDS LIST
+    # ----------------------
+    # LIST FRIENDS
+    # ----------------------
     @app.route('/friends')
     @require_token
     def friends():
+        user = User.query.filter_by(username=request.username).first()
         friends = User.query.join(Friendship, User.id == Friendship.friend_id)\
-            .filter(Friendship.user_id == current_user.id).all()
+            .filter(Friendship.user_id == user.id).all()
 
         friends_list = [{"username": f.username, "email": f.email} for f in friends]
         return jsonify({"friends": friends_list}), 200
 
+    # ----------------------
     # EDIT PROFILE
+    # ----------------------
     @app.route('/edit-profile', methods=['POST'])
     @require_token
     def edit_profile():
+        user = User.query.filter_by(username=request.username).first()
         data = request.form
         bio = data.get('bio')
         profile_picture = request.files.get('profile_picture')
-        user = current_user
 
         user.bio = bio
         if profile_picture and profile_picture.filename:
@@ -269,7 +291,9 @@ def init_routes(app):
             db.session.rollback()
             return jsonify({"error": "Update failed"}), 500
 
-    # LOGOUT (debug only)
+    # ----------------------
+    # DEBUG LOGOUT (non-token)
+    # ----------------------
     @app.route('/logout')
     def logout():
         session.clear()
