@@ -85,7 +85,10 @@ def init_routes(app):
     @jwt_required()
     def user_homepage(username):
         user_id = get_jwt_identity()
+        logging.debug(f"User ID from JWT: {user_id}")
+
         user = User.query.get(user_id)
+        logging.debug(f"[JWT DEBUG] Retrieved user from DB: {user}")
 
         if not user or user.username != username:
             return jsonify({"error": "Unauthorized access"}), 403
@@ -143,7 +146,12 @@ def init_routes(app):
     @app.route('/api/save_location', methods=['POST'])
     @jwt_required()
     def save_location():
+        user_id = get_jwt_identity()
+        logging.debug(f"[SAVE_LOCATION] JWT identity: {user_id}")
+    
         data = request.get_json()
+        logging.debug(f"[SAVE_LOCATION] Incoming JSON: {data}")
+    
         lat = data.get('lat')
         lng = data.get('lng')
 
@@ -151,15 +159,22 @@ def init_routes(app):
             return jsonify({'error': 'Invalid location data'}), 400
 
         try:
-            user = User.query.get(get_jwt_identity())
+            user = User.query.get(user_id)
+            logging.debug(f"[SAVE_LOCATION] Found user: {user}")
+
+            if not user:
+                return jsonify({'error': 'User not found'}), 404
+
             user.latitude = lat
             user.longitude = lng
             db.session.commit()
+
             return jsonify({'status': 'Location saved'}), 200
         except Exception as e:
             db.session.rollback()
             logging.error(f"Error saving user location: {e}")
             return jsonify({'error': 'Internal server error'}), 500
+
 
     # ----------------------------
     # SAVE EVENT
