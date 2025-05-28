@@ -14,7 +14,7 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 TICKETMASTER_API_KEY = os.getenv('TICKETMASTER_API_KEY')
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, force=True)
 
 def init_routes(app):
     # ----------------------------
@@ -148,10 +148,10 @@ def init_routes(app):
     def save_location():
         user_id = get_jwt_identity()
         logging.debug(f"[SAVE_LOCATION] JWT identity: {user_id}")
-    
+
         data = request.get_json()
         logging.debug(f"[SAVE_LOCATION] Incoming JSON: {data}")
-    
+
         lat = data.get('lat')
         lng = data.get('lng')
 
