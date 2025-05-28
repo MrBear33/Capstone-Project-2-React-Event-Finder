@@ -42,9 +42,7 @@ function UserHomepage({ user }) {
 
           try {
             // ✅ Explicit content-type header added
-            await axios.post('/api/save_location', coords, {
-              headers: { 'Content-Type': 'application/json' }
-            });
+            await axios.post('/api/save_location', coords);
             console.log("📍 Location sent to backend:", coords);
           } catch (err) {
             console.warn("❌ Could not send location:", err);
