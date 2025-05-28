@@ -3,6 +3,8 @@ from flask_migrate import Migrate
 from app.db import db
 from config import config
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+
 
 def create_app(config_name="default"):
     app = Flask(__name__, static_folder="static")
@@ -16,6 +18,8 @@ def create_app(config_name="default"):
     # Initialize extensions
     db.init_app(app)
     Migrate(app, db)
+
+    jwt = JWTManager(app)
 
     # Register routes
     from app.routes import init_routes
