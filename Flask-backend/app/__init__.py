@@ -17,7 +17,7 @@ def create_app(config_name="default"):
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 
     # Enable CORS for all routes
-    CORS(app, supports_credentials=True)
+    CORS(app, supports_credentials=True, origins=["https://capstone-project-2-react-front-end.onrender.com"])
 
     # Load environment-specific config
     app.config.from_object(config[config_name])

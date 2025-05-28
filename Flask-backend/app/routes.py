@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.DEBUG, force=True)
 
 def init_routes(app):
     # ----------------------------
-    # LOGIN
+    # LOGIN - JWT auth
     # ----------------------------
     @app.route('/login', methods=['POST'])
     def login():
@@ -44,7 +44,6 @@ def init_routes(app):
     @app.route('/register', methods=['POST'])
     def register():
         data = request.get_json()
-        logging.debug(f"[REGISTER] Incoming data: {data}")
         username = data.get('username')
         email = data.get('email')
         password = data.get('password')
@@ -57,10 +56,14 @@ def init_routes(app):
         errors = []
         if len(password) < 8:
             errors.append("at least 8 characters")
-        if not any(c.isdigit() for c in password): errors.append("a number")
-        if not any(c.isupper() for c in password): errors.append("an uppercase letter")
-        if not any(c.islower() for c in password): errors.append("a lowercase letter")
-        if not any(c in "!@#$%^&*()-_+=<>?/|{}[]~`" for c in password): errors.append("a special character")
+        if not any(c.isdigit() for c in password):
+            errors.append("at least one number")
+        if not any(c.isupper() for c in password):
+            errors.append("at least one uppercase letter")
+        if not any(c.islower() for c in password):
+            errors.append("at least one lowercase letter")
+        if not any(c in "!@#$%^&*()-_+=<>?/|{}[]~`" for c in password):
+            errors.append("at least one special character")
 
         if errors:
             return jsonify({"error": "Password must include " + ", ".join(errors) + "."}), 400
@@ -73,7 +76,7 @@ def init_routes(app):
             return jsonify({"message": "Registration successful"}), 201
         except Exception as e:
             db.session.rollback()
-            logging.error(f"[REGISTER] Error: {e}")
+            logging.error(f"Registration error: {e}")
             return jsonify({"error": "Internal server error"}), 500
 
     # ----------------------------
@@ -110,7 +113,7 @@ def init_routes(app):
         }), 200
 
     # ----------------------------
-    # EVENTS
+    # EVENTS FROM TICKETMASTER
     # ----------------------------
     @app.route('/events')
     @jwt_required()
@@ -149,8 +152,10 @@ def init_routes(app):
         data = request.get_json()
         logging.debug(f"[SAVE_LOCATION] Incoming JSON: {data}")
 
-        if not data or 'lat' not in data or 'lng' not in data:
-            logging.warning("[SAVE_LOCATION] Invalid or missing lat/lng")
+        lat = data.get('lat')
+        lng = data.get('lng')
+
+        if lat is None or lng is None:
             return jsonify({'error': 'Invalid location data'}), 400
 
         try:
@@ -160,18 +165,138 @@ def init_routes(app):
             if not user:
                 return jsonify({'error': 'User not found'}), 404
 
-            user.latitude = data['lat']
-            user.longitude = data['lng']
+            user.latitude = lat
+            user.longitude = lng
             db.session.commit()
 
             return jsonify({'status': 'Location saved'}), 200
         except Exception as e:
             db.session.rollback()
-            logging.error(f"[SAVE_LOCATION] Error saving location: {e}")
+            logging.error(f"Error saving user location: {e}")
             return jsonify({'error': 'Internal server error'}), 500
 
     # ----------------------------
-    # Additional routes (save_event, remove_saved_event, etc.)
+    # SAVE EVENT
     # ----------------------------
-    # ✅ Keep your remaining routes as-is — they look clean and secure
+    @app.route('/save_event/<string:api_event_id>', methods=['POST', 'OPTIONS'])
+    @jwt_required()
+    def save_event(api_event_id):
+        user = User.query.get(get_jwt_identity())
+        try:
+            res = requests.get(
+                f"https://app.ticketmaster.com/discovery/v2/events/{api_event_id}.json",
+                params={"apikey": TICKETMASTER_API_KEY}
+            )
+            res.raise_for_status()
+            data = res.json()
 
+            event = Event.query.filter_by(api_event_id=api_event_id).first()
+            if not event:
+                event = Event(
+                    api_event_id=api_event_id,
+                    name=data.get('name'),
+                    location=data.get('_embedded', {}).get('venues', [{}])[0].get('name'),
+                    date=data.get('dates', {}).get('start', {}).get('dateTime'),
+                    category=data.get('classifications', [{}])[0].get('segment', {}).get('name'),
+                    image_url=data.get('images', [{}])[0].get('url')
+                )
+                db.session.add(event)
+                db.session.commit()
+
+            if SavedEvent.query.filter_by(user_id=user.id, event_id=event.id).first():
+                return jsonify({"message": "Already saved"}), 200
+
+            new_saved = SavedEvent(user_id=user.id, event_id=event.id)
+            db.session.add(new_saved)
+            db.session.commit()
+            return jsonify({"message": "Event saved"}), 201
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error saving event: {e}")
+            return jsonify({"error": "Could not save event"}), 500
+
+    # ----------------------------
+    # REMOVE SAVED EVENT
+    # ----------------------------
+    @app.route('/remove_saved_event/<int:saved_event_id>', methods=['POST'])
+    @jwt_required()
+    def remove_saved_event(saved_event_id):
+        user = User.query.get(get_jwt_identity())
+        try:
+            saved = SavedEvent.query.filter_by(id=saved_event_id, user_id=user.id).first()
+            if not saved:
+                return jsonify({"error": "Not found"}), 404
+
+            db.session.delete(saved)
+            db.session.commit()
+            return jsonify({"message": "Event removed"}), 200
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error removing event: {e}")
+            return jsonify({"error": "Failed to remove event"}), 500
+
+    # ----------------------------
+    # ADD FRIEND
+    # ----------------------------
+    @app.route('/add_friend', methods=['POST'])
+    @jwt_required()
+    def add_friend():
+        user = User.query.get(get_jwt_identity())
+        friend_username = request.get_json().get('username')
+        friend = User.query.filter_by(username=friend_username).first()
+
+        if not friend or friend.id == user.id:
+            return jsonify({"error": "Invalid friend"}), 400
+
+        if Friendship.query.filter_by(user_id=user.id, friend_id=friend.id).first():
+            return jsonify({"message": "Already friends"}), 200
+
+        try:
+            new_link = Friendship(user_id=user.id, friend_id=friend.id)
+            db.session.add(new_link)
+            db.session.commit()
+            return jsonify({"message": f"Friend added: {friend.username}"}), 201
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error adding friend: {e}")
+            return jsonify({"error": "Could not add friend"}), 500
+
+    # ----------------------------
+    # GET FRIENDS
+    # ----------------------------
+    @app.route('/friends')
+    @jwt_required()
+    def friends():
+        user = User.query.get(get_jwt_identity())
+        friends = User.query.join(Friendship, User.id == Friendship.friend_id) \
+            .filter(Friendship.user_id == user.id).all()
+
+        return jsonify({"friends": [{"username": f.username, "email": f.email} for f in friends]}), 200
+
+    # ----------------------------
+    # EDIT PROFILE
+    # ----------------------------
+    @app.route('/edit-profile', methods=['POST'])
+    @jwt_required()
+    def edit_profile():
+        user = User.query.get(get_jwt_identity())
+        data = request.form
+        bio = data.get('bio')
+        pic = request.files.get('profile_picture')
+
+        user.bio = bio
+        if pic and pic.filename:
+            try:
+                encoded = base64.b64encode(pic.read()).decode('utf-8')
+                user.profile_picture = f"data:image/png;base64,{encoded}"
+            except Exception as e:
+                logging.error(f"Error encoding profile picture: {e}")
+                return jsonify({"error": "Image error"}), 500
+
+        try:
+            db.session.commit()
+            return jsonify({"message": "Profile updated"}), 200
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error updating profile: {e}")
+            return jsonify({"error": "Update failed"}), 500
