@@ -47,7 +47,17 @@ function App() {
       <Navbar user={user} onLogout={handleLogout} />
 
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        {/* Redirect to user homepage if logged in, otherwise show landing page */}
+        <Route
+          path="/"
+          element={
+            user ? (
+              <Navigate to={`/user/${user}`} replace />
+            ) : (
+              <LandingPage />
+            )
+          }
+        />
         <Route path="/login" element={<LoginPage setUser={setUser} />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/events" element={<EventsPage user={user} />} />
