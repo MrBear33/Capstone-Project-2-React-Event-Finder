@@ -1,5 +1,5 @@
 from app.db import db  # Correct import
-from flask_login import UserMixin  # Import UserMixin for Flask-Login
+
 
 # Association Table for Friendship
 class Friendship(db.Model):
@@ -8,7 +8,7 @@ class Friendship(db.Model):
     friend_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
 
 # User Model
-class User(db.Model, UserMixin):  # Add UserMixin here
+class User(db.Model):  # Add UserMixin here
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
