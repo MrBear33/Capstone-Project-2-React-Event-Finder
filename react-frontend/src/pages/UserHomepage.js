@@ -41,8 +41,12 @@ function UserHomepage({ user }) {
           setLocation(coords); // Optional local display
 
           try {
-            // ✅ Explicit content-type header added
-            await axios.post('/api/save_location', coords);
+            // ✅ Explicit content-type header added for proper JSON parsing
+            await axios.post('/api/save_location', coords, {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
             console.log("📍 Location sent to backend:", coords);
           } catch (err) {
             console.warn("❌ Could not send location:", err);
