@@ -11,19 +11,21 @@ TICKETMASTER_API_KEY = os.getenv('TICKETMASTER_API_KEY')
 # Create the Flask app
 app = create_app()
 
-# Set up logging
+# Force logging config to work under Gunicorn
 logging.basicConfig(
-    level=logging.DEBUG,  # Log level
-    format='%(asctime)s - %(levelname)s - %(message)s',  # Log format (From stack overflow)
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    force=True  # 🔥 Critical to override Gunicorn config
 )
 
-# Log the database URI for debugging
-logging.debug(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
-logging.debug(f"Google API Key Loaded: {bool(GOOGLE_API_KEY)}")  # Log whether the API key was loaded
+# Log that the app loaded and keys loaded
+logging.debug("Flask app started with debug logging enabled")
+logging.debug(f"Database URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
+logging.debug(f"Google API Key Loaded: {bool(GOOGLE_API_KEY)}")
+logging.debug(f"Ticketmaster API Key Loaded: {bool(TICKETMASTER_API_KEY)}")
 
 print("Loaded SUPABASE_DB_URL:", os.getenv("SUPABASE_DB_URL"))
 
-
+# Run the application (used only in local dev; ignored by Gunicorn in prod)
 if __name__ == "__main__":
-    # Run the application
-    app.run()  # Remove `debug=True` in production
+    app.run()
