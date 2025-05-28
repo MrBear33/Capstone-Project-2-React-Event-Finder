@@ -2,8 +2,6 @@ import logging
 import os
 import base64
 import requests
-import jwt
-import datetime
 from flask import request, jsonify
 from app.models import User, Event, Friendship, SavedEvent
 from app.db import db
@@ -15,7 +13,6 @@ from flask_jwt_extended import get_jwt_identity, jwt_required, create_access_tok
 load_dotenv()
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 TICKETMASTER_API_KEY = os.getenv('TICKETMASTER_API_KEY')
-JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -41,7 +38,7 @@ def init_routes(app):
         return jsonify({"error": "Invalid username or password"}), 401
 
     # ----------------------------
-    # REGISTER new user
+    # REGISTER
     # ----------------------------
     @app.route('/register', methods=['POST'])
     def register():
@@ -113,7 +110,7 @@ def init_routes(app):
         }), 200
 
     # ----------------------------
-    # EVENTS - Near stored location
+    # EVENTS FROM TICKETMASTER
     # ----------------------------
     @app.route('/events')
     @jwt_required()
@@ -141,7 +138,7 @@ def init_routes(app):
             return jsonify({"error": "Unable to fetch events"}), 500
 
     # ----------------------------
-    # SAVE LOCATION to DB
+    # SAVE LOCATION
     # ----------------------------
     @app.route('/api/save_location', methods=['POST'])
     @jwt_required()
@@ -199,7 +196,6 @@ def init_routes(app):
             db.session.add(new_saved)
             db.session.commit()
             return jsonify({"message": "Event saved"}), 201
-
         except Exception as e:
             db.session.rollback()
             logging.error(f"Error saving event: {e}")
@@ -252,7 +248,7 @@ def init_routes(app):
             return jsonify({"error": "Could not add friend"}), 500
 
     # ----------------------------
-    # GET FRIENDS LIST
+    # GET FRIENDS
     # ----------------------------
     @app.route('/friends')
     @jwt_required()
