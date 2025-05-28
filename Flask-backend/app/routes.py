@@ -30,7 +30,7 @@ def init_routes(app):
         user = User.query.filter_by(username=username).first()
         if user and checkpw(password, user.password.encode('utf-8')):
             try:
-                token = create_access_token(identity=user.id)
+                token = create_access_token(identity=str(user.id))
                 return jsonify({"token": token, "username": user.username}), 200
             except Exception as e:
                 logging.error(f"[LOGIN] Error generating token: {e}")
