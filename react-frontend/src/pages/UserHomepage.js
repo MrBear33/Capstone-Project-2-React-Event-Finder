@@ -6,38 +6,30 @@ import './UserHomepage.css';                        // Styles for this page
 function UserHomepage({ user }) {
   const { username } = useParams(); // Grab username from the URL
 
-  // State for user profile data
-  const [userData, setUserData] = useState(null);
-
-  // State for location
-  const [location, setLocation] = useState(null);
-
-  // Loading and error handling
+  const [userData, setUserData] = useState(null);   // User info from backend
+  const [location, setLocation] = useState(null);   // Browser geolocation
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-
-  // Messages for feedback
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Fetch user info when component loads
+  // 🔹 Load user profile data
   useEffect(() => {
     async function fetchUserData() {
       try {
         const res = await axios.get(`/user/${username}`);
-        setUserData(res.data);        // Save user info to state
-        setLoading(false);            // Done loading
+        setUserData(res.data);
       } catch (err) {
         console.error("Couldn't load profile:", err);
-        setError('Couldn’t load your profile right now.');
+        setError("Couldn’t load your profile right now.");
+      } finally {
         setLoading(false);
       }
     }
-
     fetchUserData();
   }, [username]);
 
-  // Grab browser's location and send to backend
+  // 🔹 Get geolocation and send to backend
   useEffect(() => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -46,40 +38,39 @@ function UserHomepage({ user }) {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude
           };
-          setLocation(coords); // Save locally too (optional)
+          setLocation(coords); // Optional local display
 
-          // Send to backend so it can store or use it
           try {
-            await axios.post('/api/save_location', coords);
-            console.log("Location sent to backend:", coords);
+            // ✅ Explicit content-type header added
+            await axios.post('/api/save_location', coords, {
+              headers: { 'Content-Type': 'application/json' }
+            });
+            console.log("📍 Location sent to backend:", coords);
           } catch (err) {
-            console.warn("Could not send location:", err);
+            console.warn("❌ Could not send location:", err);
           }
         },
         err => {
-          console.warn("Could not get location:", err.message);
+          console.warn("❌ Could not get location:", err.message);
         }
       );
     }
   }, []);
 
-  // Remove an event from saved list
+  // 🔹 Remove a saved event
   async function handleRemove(savedEventId) {
     try {
       const res = await axios.post(`/remove_saved_event/${savedEventId}`);
       if (res.status === 200) {
         setMessage("Event removed!");
         setErrorMessage('');
-
-        // Remove the event from the local UI
         setUserData(data => ({
           ...data,
           saved_events: data.saved_events.filter(
             event => event.saved_event_id !== savedEventId
           )
         }));
-
-        setTimeout(() => setMessage(''), 3000); // Clear message
+        setTimeout(() => setMessage(''), 3000);
       }
     } catch (err) {
       console.error("Couldn't remove event:", err);
@@ -88,6 +79,7 @@ function UserHomepage({ user }) {
     }
   }
 
+  // 🔹 Loading / error states
   if (loading) return <p>Loading your profile...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
@@ -95,7 +87,7 @@ function UserHomepage({ user }) {
     <div className="user-homepage">
       <h2>Welcome, {userData.username}!</h2>
 
-      {/* Profile picture and optional bio/location */}
+      {/* 🔹 Profile section */}
       <div className="user-info-section">
         <div className="profile-picture-container">
           <img
@@ -106,15 +98,12 @@ function UserHomepage({ user }) {
         </div>
 
         <div className="user-details">
-          {/* Show browser-retrieved location if available */}
           {location && (
             <p>
-              <strong>Your Location (from browser):</strong>{' '}
+              <strong>Your Location:</strong>{' '}
               Latitude {location.lat.toFixed(4)}, Longitude {location.lng.toFixed(4)}
             </p>
           )}
-
-          {/* Optional bio from backend */}
           {userData.bio && (
             <p><strong>Bio:</strong> {userData.bio}</p>
           )}
@@ -123,11 +112,11 @@ function UserHomepage({ user }) {
 
       <h3>Saved Events</h3>
 
-      {/* Flash messages */}
+      {/* 🔹 Flash messages */}
       {message && <p className="success-message">{message}</p>}
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
-      {/* Event list or fallback */}
+      {/* 🔹 Saved Events */}
       {userData.saved_events.length > 0 ? (
         <ul className="event-list">
           {userData.saved_events.map(event => (
@@ -135,15 +124,9 @@ function UserHomepage({ user }) {
               <p><strong>{event.name}</strong></p>
               <p>{event.location}</p>
               <p>{new Date(event.date).toLocaleString()}</p>
-
-              {/* Event image if available */}
               {event.image_url && (
-                <img
-                  src={event.image_url}
-                  alt={event.name}
-                />
+                <img src={event.image_url} alt={event.name} />
               )}
-
               <button onClick={() => handleRemove(event.saved_event_id)}>
                 Remove
               </button>

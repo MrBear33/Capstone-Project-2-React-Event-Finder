@@ -29,23 +29,21 @@ function LoginPage({ setUser }) {
 
     try {
       // Call the backend with username and password
-      const res = await axios.post(
-        `${BASE_URL}/login`,
-        formData
-      );
+      const res = await axios.post(`${BASE_URL}/login`, formData);
 
-      // If login worked, we get a token back
+      // If login worked, we get a token and the confirmed username
       if (res.status === 200 && res.data.token) {
         const token = res.data.token;
+        const username = res.data.username; // ✅ Use backend-confirmed username
 
         // Save token in localStorage so we can use it on other pages
         localStorage.setItem('token', token);
 
         // Set the logged in user for React state
-        setUser(formData.username);
+        setUser(username);
 
         // Send them to their homepage
-        navigate(`/user/${formData.username}`);
+        navigate(`/user/${username}`);
       } else {
         setError('Login failed — please try again.');
       }
