@@ -1,23 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import axios from '../axiosWithToken';             // Use custom axios instance with token
-import './PageStyles.css';                         // Import CSS for styling
+import axios from '../axiosWithToken';             // Custom axios instance with token
+import './PageStyles.css';                         // Page-specific styles
 
 function EventsPage({ user }) {
-  const [events, setEvents] = useState([]);        // Fetched event list
-  const [error, setError] = useState('');          // Error state
-  const [loading, setLoading] = useState(true);    // Loading state
-  const [savedIds, setSavedIds] = useState(new Set()); // Track saved event IDs
+  const [events, setEvents] = useState([]);              // Holds fetched event data
+  const [error, setError] = useState('');                // Error message display
+  const [loading, setLoading] = useState(true);          // Loading spinner toggle
+  const [savedIds, setSavedIds] = useState(new Set());   // Track which events were saved
 
-  // When the page loads, go fetch events from the backend
+  // Fetch nearby events on component mount
   useEffect(() => {
     async function fetchEvents() {
       try {
-        const res = await axios.get('/events');    // Token gets auto-attached
-        setEvents(res.data);
-        setLoading(false);
+        const res = await axios.get('/events');          // Backend uses stored DB location
+        setEvents(res.data);                             // Save results in state
       } catch (err) {
         console.error("Failed to fetch events:", err);
-        setError('Unable to load events.');
+        if (err.response?.data?.error === "User location not set.") {
+          setError("You must allow location access first.");
+        } else {
+          setError("Unable to load events right now.");
+        }
+      } finally {
         setLoading(false);
       }
     }
@@ -25,54 +29,55 @@ function EventsPage({ user }) {
     fetchEvents();
   }, []);
 
-  // Save an event to the user's account
+  // Trigger backend save event handler
   async function handleSave(apiEventId) {
     try {
-      const res = await axios.post(`/save_event/${apiEventId}`);  // Token auto-added
+      const res = await axios.post(`/save_event/${apiEventId}`);
       if (res.status === 201 || res.status === 200) {
-        // Keep track of which event IDs were saved
-        setSavedIds(new Set([...savedIds, apiEventId]));
+        setSavedIds(new Set([...savedIds, apiEventId])); // Mark as saved locally
       }
     } catch (err) {
       console.error("Failed to save event:", err);
-      setError('Could not save event.');
+      setError("Could not save event. Please try again.");
     }
   }
 
-  // Simple loading and error states
   if (loading) return <p>Loading events...</p>;
-  if (error) return <p style={{ color: 'red' }}>{error}</p>;
+  if (error) return <p className="error-message">{error}</p>;
 
   return (
     <div className="page-container">
       <h2>Nearby Events</h2>
 
-      {/* If there are no events at all */}
       {events.length === 0 ? (
-        <p>No events found in your area.</p>
+        <p>No events found near your location.</p>
       ) : (
-        <ul>
+        <ul className="event-list">
           {events.map(event => (
-            <li key={event.id} style={{ marginBottom: '2rem' }}>
-              <p><strong>{event.name}</strong></p>
-              <p>{event._embedded?.venues?.[0]?.name || "Unknown location"}</p>
-              <p>{new Date(event.dates.start.dateTime).toLocaleString()}</p>
+            <li key={event.id} className="event-card">
+              <h3>{event.name}</h3>
+              <p>
+                {event._embedded?.venues?.[0]?.name || "Unknown location"}
+              </p>
+              <p>
+                {new Date(event.dates?.start?.dateTime).toLocaleString()}
+              </p>
 
-              {/* Show image if one exists */}
               {event.images?.[0]?.url && (
                 <img
                   src={event.images[0].url}
                   alt={event.name}
-                  style={{ maxWidth: "200px" }}
+                  className="event-image"
                 />
               )}
 
-              {/* Save button gets disabled if already saved */}
               <div>
                 {savedIds.has(event.id) ? (
-                  <button disabled>Saved</button>
+                  <button disabled className="saved-button">Saved</button>
                 ) : (
-                  <button onClick={() => handleSave(event.id)}>Save</button>
+                  <button onClick={() => handleSave(event.id)}>
+                    Save
+                  </button>
                 )}
               </div>
             </li>
