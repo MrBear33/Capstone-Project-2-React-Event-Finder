@@ -14,11 +14,12 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 TICKETMASTER_API_KEY = os.getenv('TICKETMASTER_API_KEY')
 
+# Enable debug logging
 logging.basicConfig(level=logging.DEBUG, force=True)
 
 def init_routes(app):
     # ----------------------------
-    # LOGIN - JWT auth
+    # LOGIN - generate JWT on success
     # ----------------------------
     @app.route('/login', methods=['POST'])
     def login():
@@ -39,7 +40,7 @@ def init_routes(app):
         return jsonify({"error": "Invalid username or password"}), 401
 
     # ----------------------------
-    # REGISTER
+    # REGISTER - with password validation
     # ----------------------------
     @app.route('/register', methods=['POST'])
     def register():
@@ -48,11 +49,13 @@ def init_routes(app):
         email = data.get('email')
         password = data.get('password')
 
+        # Check for username/email duplicates
         if User.query.filter_by(username=username).first():
             return jsonify({"error": "Username already taken"}), 400
         if User.query.filter_by(email=email).first():
             return jsonify({"error": "Email already in use"}), 400
 
+        # Simple password rules
         errors = []
         if len(password) < 8:
             errors.append("at least 8 characters")
@@ -68,6 +71,7 @@ def init_routes(app):
         if errors:
             return jsonify({"error": "Password must include " + ", ".join(errors) + "."}), 400
 
+        # Save new user
         try:
             hashed_password = hashpw(password.encode('utf-8'), gensalt()).decode('utf-8')
             new_user = User(username=username, email=email, password=hashed_password)
@@ -80,7 +84,7 @@ def init_routes(app):
             return jsonify({"error": "Internal server error"}), 500
 
     # ----------------------------
-    # USER HOMEPAGE
+    # HOMEPAGE - pull user info & saved events
     # ----------------------------
     @app.route('/user/<username>')
     @jwt_required()
@@ -113,7 +117,7 @@ def init_routes(app):
         }), 200
 
     # ----------------------------
-    # EVENTS FROM TICKETMASTER
+    # EVENTS - fetch from Ticketmaster using user location
     # ----------------------------
     @app.route('/events')
     @jwt_required()
@@ -141,7 +145,7 @@ def init_routes(app):
             return jsonify({"error": "Unable to fetch events"}), 500
 
     # ----------------------------
-    # SAVE LOCATION
+    # SAVE LOCATION - store user's lat/lng
     # ----------------------------
     @app.route('/api/save_location', methods=['POST'])
     @jwt_required()
@@ -176,44 +180,50 @@ def init_routes(app):
             return jsonify({'error': 'Internal server error'}), 500
 
     # ----------------------------
-    # SAVE EVENT
+    # SAVE EVENT - with preflight CORS fix
     # ----------------------------
     @app.route('/save_event/<string:api_event_id>', methods=['POST', 'OPTIONS'])
-    @jwt_required()
     def save_event(api_event_id):
-        user = User.query.get(get_jwt_identity())
-        try:
-            res = requests.get(
-                f"https://app.ticketmaster.com/discovery/v2/events/{api_event_id}.json",
-                params={"apikey": TICKETMASTER_API_KEY}
-            )
-            res.raise_for_status()
-            data = res.json()
+        if request.method == 'OPTIONS':
+            return '', 200  # Let CORS preflight requests through without auth
 
-            event = Event.query.filter_by(api_event_id=api_event_id).first()
-            if not event:
-                event = Event(
-                    api_event_id=api_event_id,
-                    name=data.get('name'),
-                    location=data.get('_embedded', {}).get('venues', [{}])[0].get('name'),
-                    date=data.get('dates', {}).get('start', {}).get('dateTime'),
-                    category=data.get('classifications', [{}])[0].get('segment', {}).get('name'),
-                    image_url=data.get('images', [{}])[0].get('url')
+        @jwt_required()
+        def handle_post():
+            user = User.query.get(get_jwt_identity())
+            try:
+                res = requests.get(
+                    f"https://app.ticketmaster.com/discovery/v2/events/{api_event_id}.json",
+                    params={"apikey": TICKETMASTER_API_KEY}
                 )
-                db.session.add(event)
+                res.raise_for_status()
+                data = res.json()
+
+                event = Event.query.filter_by(api_event_id=api_event_id).first()
+                if not event:
+                    event = Event(
+                        api_event_id=api_event_id,
+                        name=data.get('name'),
+                        location=data.get('_embedded', {}).get('venues', [{}])[0].get('name'),
+                        date=data.get('dates', {}).get('start', {}).get('dateTime'),
+                        category=data.get('classifications', [{}])[0].get('segment', {}).get('name'),
+                        image_url=data.get('images', [{}])[0].get('url')
+                    )
+                    db.session.add(event)
+                    db.session.commit()
+
+                if SavedEvent.query.filter_by(user_id=user.id, event_id=event.id).first():
+                    return jsonify({"message": "Already saved"}), 200
+
+                new_saved = SavedEvent(user_id=user.id, event_id=event.id)
+                db.session.add(new_saved)
                 db.session.commit()
+                return jsonify({"message": "Event saved"}), 201
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Error saving event: {e}")
+                return jsonify({"error": "Could not save event"}), 500
 
-            if SavedEvent.query.filter_by(user_id=user.id, event_id=event.id).first():
-                return jsonify({"message": "Already saved"}), 200
-
-            new_saved = SavedEvent(user_id=user.id, event_id=event.id)
-            db.session.add(new_saved)
-            db.session.commit()
-            return jsonify({"message": "Event saved"}), 201
-        except Exception as e:
-            db.session.rollback()
-            logging.error(f"Error saving event: {e}")
-            return jsonify({"error": "Could not save event"}), 500
+        return handle_post()
 
     # ----------------------------
     # REMOVE SAVED EVENT
@@ -262,7 +272,7 @@ def init_routes(app):
             return jsonify({"error": "Could not add friend"}), 500
 
     # ----------------------------
-    # GET FRIENDS
+    # FRIENDS LIST
     # ----------------------------
     @app.route('/friends')
     @jwt_required()
