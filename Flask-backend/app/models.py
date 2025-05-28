@@ -16,6 +16,10 @@ class User(db.Model, UserMixin):  # Add UserMixin here
     profile_picture = db.Column(db.Text, nullable=True)  # Store Base64-encoded image data
     bio = db.Column(db.Text, nullable=True)
 
+    # Location fields for geolocation support
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+
     friends = db.relationship(
         'User',
         secondary='friendship',
@@ -24,6 +28,7 @@ class User(db.Model, UserMixin):  # Add UserMixin here
         backref='friend_of'
     )
     saved_events = db.relationship('SavedEvent', backref='user', lazy=True)
+
 
 # Event Model
 class Event(db.Model):

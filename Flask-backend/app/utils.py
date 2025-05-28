@@ -38,28 +38,28 @@ def verify_token(token):
 # -------------------------
 # Require token for a route
 # -------------------------
-def require_token(f):
-    """
-    Decorator that locks down a route to token-authenticated users.
-    Attaches the username to request.username.
-    """
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        auth_header = request.headers.get("Authorization")
+# def require_token(f):
+#     """
+#     Decorator that locks down a route to token-authenticated users.
+#     Attaches the username to request.username.
+#     """
+#     @wraps(f)
+#     def wrapper(*args, **kwargs):
+#         auth_header = request.headers.get("Authorization")
 
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return jsonify({"error": "Missing or invalid token"}), 401
+#         if not auth_header or not auth_header.startswith("Bearer "):
+#             return jsonify({"error": "Missing or invalid token"}), 401
 
-        token = auth_header.split(" ")[1]
-        username = verify_token(token)
+#         token = auth_header.split(" ")[1]
+#         username = verify_token(token)
 
-        if not username:
-            return jsonify({"error": "Invalid or expired token"}), 401
+#         if not username:
+#             return jsonify({"error": "Invalid or expired token"}), 401
 
-        request.username = username
-        return f(*args, **kwargs)
-    return wrapper
-
+#         request.username = username
+#         return f(*args, **kwargs)
+#     return wrapper
+# No longer using require_token decorator, as it was not used in the codebase
 # -------------------------
 # Geolocation via Google API
 # -------------------------

@@ -17,7 +17,6 @@ Flask==3.0.3
 Flask-Bcrypt==1.0.1
 flask-cors==5.0.1
 Flask-DebugToolbar==0.16.0
-Flask-Login==0.6.3
 Flask-Migrate==4.1.0
 Flask-SQLAlchemy==3.1.1
 forex-python==1.8
