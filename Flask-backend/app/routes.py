@@ -49,13 +49,11 @@ def init_routes(app):
         email = data.get('email')
         password = data.get('password')
 
-        # Check for username/email duplicates
         if User.query.filter_by(username=username).first():
             return jsonify({"error": "Username already taken"}), 400
         if User.query.filter_by(email=email).first():
             return jsonify({"error": "Email already in use"}), 400
 
-        # Simple password rules
         errors = []
         if len(password) < 8:
             errors.append("at least 8 characters")
@@ -71,7 +69,6 @@ def init_routes(app):
         if errors:
             return jsonify({"error": "Password must include " + ", ".join(errors) + "."}), 400
 
-        # Save new user
         try:
             hashed_password = hashpw(password.encode('utf-8'), gensalt()).decode('utf-8')
             new_user = User(username=username, email=email, password=hashed_password)
@@ -185,7 +182,7 @@ def init_routes(app):
     @app.route('/save_event/<string:api_event_id>', methods=['POST', 'OPTIONS'])
     def save_event(api_event_id):
         if request.method == 'OPTIONS':
-            return '', 200  # Let CORS preflight requests through without auth
+            return '', 200
 
         @jwt_required()
         def handle_post():
@@ -226,7 +223,7 @@ def init_routes(app):
         return handle_post()
 
     # ----------------------------
-    # REMOVE SAVED EVENT
+    # REMOVE SAVED EVENT by internal ID
     # ----------------------------
     @app.route('/remove_saved_event/<int:saved_event_id>', methods=['POST'])
     @jwt_required()
@@ -244,6 +241,31 @@ def init_routes(app):
             db.session.rollback()
             logging.error(f"Error removing event: {e}")
             return jsonify({"error": "Failed to remove event"}), 500
+
+    # ----------------------------
+    # REMOVE SAVED EVENT by API event ID
+    # ----------------------------
+    @app.route('/remove_saved_event_by_api_id/<string:api_event_id>', methods=['POST'])
+    @jwt_required()
+    def remove_saved_event_by_api_id(api_event_id):
+        user = User.query.get(get_jwt_identity())
+        event = Event.query.filter_by(api_event_id=api_event_id).first()
+
+        if not event:
+            return jsonify({"error": "Event not found"}), 404
+
+        saved = SavedEvent.query.filter_by(user_id=user.id, event_id=event.id).first()
+        if not saved:
+            return jsonify({"error": "Saved event not found"}), 404
+
+        try:
+            db.session.delete(saved)
+            db.session.commit()
+            return jsonify({"message": "Event unsaved"}), 200
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error removing saved event: {e}")
+            return jsonify({"error": "Failed to unsave event"}), 500
 
     # ----------------------------
     # ADD FRIEND
