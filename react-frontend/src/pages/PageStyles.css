@@ -104,3 +104,9 @@ button.saved-button {
   color: #0056b3;
   text-decoration: underline;
 }
+
+.no-link {
+  margin-top: 0.5rem;
+  color: #999;
+  font-style: italic;
+}

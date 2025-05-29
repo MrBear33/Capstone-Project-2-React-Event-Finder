@@ -95,16 +95,19 @@ function EventsPage({ user }) {
                 />
               )}
 
-              {event.url && (
-                <a
-                  href={event.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ticketmaster-link"
-                >
-                  View on Ticketmaster
-                </a>
-              )}
+        {event.url ? (
+          <a
+            href={event.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ticketmaster-link"
+          >
+            View on Ticketmaster
+          </a>
+        ) : (
+          <p className="no-link">No ticket link provided</p>
+        )}
+
 
               <div>
                 {savedIds.has(event.id) ? (
