@@ -13,7 +13,7 @@ function UserHomepage({ user }) {
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // 🔹 Load user profile data
+  //  Load user profile data
   useEffect(() => {
     async function fetchUserData() {
       try {
@@ -29,7 +29,7 @@ function UserHomepage({ user }) {
     fetchUserData();
   }, [username]);
 
-  // 🔹 Get geolocation and send to backend
+  //  Get geolocation and send to backend
   useEffect(() => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -41,25 +41,25 @@ function UserHomepage({ user }) {
           setLocation(coords); // Optional local display
 
           try {
-            // ✅ Explicit content-type header added for proper JSON parsing
+            //  Explicit content-type header added for JSON parsing
             await axios.post('/api/save_location', coords, {
               headers: {
                 'Content-Type': 'application/json'
               }
             });
-            console.log("📍 Location sent to backend:", coords);
+            console.log(" Location sent to backend:", coords);
           } catch (err) {
-            console.warn("❌ Could not send location:", err);
+            console.warn(" Could not send location:", err);
           }
         },
         err => {
-          console.warn("❌ Could not get location:", err.message);
+          console.warn(" Could not get location:", err.message);
         }
       );
     }
   }, []);
 
-  // 🔹 Remove a saved event
+  //  Remove a saved event
   async function handleRemove(savedEventId) {
     try {
       const res = await axios.post(`/remove_saved_event/${savedEventId}`);
@@ -81,7 +81,7 @@ function UserHomepage({ user }) {
     }
   }
 
-  // 🔹 Loading / error states
+  //  Loading / error states
   if (loading) return <p>Loading your profile...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
@@ -89,7 +89,7 @@ function UserHomepage({ user }) {
     <div className="user-homepage">
       <h2>Welcome, {userData.username}!</h2>
 
-      {/* 🔹 Profile section */}
+      {/*  Profile section */}
       <div className="user-info-section">
         <div className="profile-picture-container">
           <img
@@ -114,11 +114,11 @@ function UserHomepage({ user }) {
 
       <h3>Saved Events</h3>
 
-      {/* 🔹 Flash messages */}
+      {/*  Flash messages */}
       {message && <p className="success-message">{message}</p>}
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
-      {/* 🔹 Saved Events */}
+      {/*  Saved Events */}
       {userData.saved_events.length > 0 ? (
         <ul className="event-list">
           {userData.saved_events.map(event => (

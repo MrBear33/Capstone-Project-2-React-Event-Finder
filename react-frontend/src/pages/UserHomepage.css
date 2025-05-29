@@ -111,12 +111,14 @@
 
 /* Profile Picture Image */
 .profile-picture {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 150px;
+  height: 150px;
   border-radius: 50%;
-  transition: box-shadow 0.3s ease;
+  object-fit: cover; /* Forces image to fill and crop perfectly */
+  border: 2px solid #ccc;
+  display: block;
 }
+
 
 .profile-picture:hover {
   box-shadow: 0 0 10px #999;
