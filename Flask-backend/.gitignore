@@ -27,4 +27,5 @@ migrations/__pycache__/
 
 __pycache__/
 .pytest_cache/
-static/
+/static/           # still ignore top-level static
+!/app/static/      # but allow app/static to be tracked
