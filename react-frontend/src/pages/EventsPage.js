@@ -95,6 +95,17 @@ function EventsPage({ user }) {
                 />
               )}
 
+              {event.url && (
+                <a
+                  href={event.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ticketmaster-link"
+                >
+                  View on Ticketmaster
+                </a>
+              )}
+
               <div>
                 {savedIds.has(event.id) ? (
                   <button onClick={() => handleUnsave(event.id)} className="unsave-button">
