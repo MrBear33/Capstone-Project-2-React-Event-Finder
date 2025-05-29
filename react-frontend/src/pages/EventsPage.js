@@ -7,6 +7,7 @@ function EventsPage({ user }) {
   const [error, setError] = useState('');                // Error message display
   const [loading, setLoading] = useState(true);          // Loading spinner toggle
   const [savedIds, setSavedIds] = useState(new Set());   // Track saved event IDs
+  const [flashMessage, setFlashMessage] = useState('');  // Flash message display
 
   // Fetch events and saved events
   useEffect(() => {
@@ -16,9 +17,9 @@ function EventsPage({ user }) {
         const eventRes = await axios.get('/events');
         setEvents(eventRes.data);
 
-        // Get list of saved event IDs
-        const savedRes = await axios.get('/friends'); // Placeholder: replace this with correct saved-events endpoint if you have one
-        const savedEventIds = new Set(savedRes.data.saved_event_ids || []); // Update this based on your actual response
+        // Get list of saved event IDs (replace with actual endpoint if available)
+        const savedRes = await axios.get('/friends');
+        const savedEventIds = new Set(savedRes.data.saved_event_ids || []);
         setSavedIds(savedEventIds);
       } catch (err) {
         console.error("Error loading events:", err);
@@ -41,10 +42,12 @@ function EventsPage({ user }) {
       const res = await axios.post(`/save_event/${apiEventId}`);
       if (res.status === 200 || res.status === 201) {
         setSavedIds(prev => new Set(prev).add(apiEventId));
+        setFlashMessage("Event saved!");
+        setTimeout(() => setFlashMessage(''), 3000);
       }
     } catch (err) {
       console.error("Failed to save event:", err);
-      setError("Could not save event. Please try again.");
+      setFlashMessage("Could not save event. Please try again.");
     }
   }
 
@@ -56,10 +59,12 @@ function EventsPage({ user }) {
         const updated = new Set(savedIds);
         updated.delete(apiEventId);
         setSavedIds(updated);
+        setFlashMessage("Event removed.");
+        setTimeout(() => setFlashMessage(''), 3000);
       }
     } catch (err) {
       console.error("Failed to unsave event:", err);
-      setError("Could not remove event. Please try again.");
+      setFlashMessage("Could not remove event. Please try again.");
     }
   }
 
@@ -69,6 +74,8 @@ function EventsPage({ user }) {
   return (
     <div className="page-container">
       <h2>Nearby Events</h2>
+
+      {flashMessage && <p className="success-message">{flashMessage}</p>}
 
       {events.length === 0 ? (
         <p>No events found near your location.</p>
