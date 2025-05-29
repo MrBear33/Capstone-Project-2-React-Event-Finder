@@ -336,4 +336,5 @@ def init_routes(app):
 
     @app.route('/static/<path:filename>')
     def serve_static(filename):
-        return send_from_directory(os.path.join(os.getcwd(), 'app/static'), filename)
+        static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'static'))
+        return send_from_directory(static_dir, filename)
