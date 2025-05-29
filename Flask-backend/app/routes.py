@@ -2,7 +2,7 @@ import logging
 import os
 import base64
 import requests
-from flask import request, jsonify
+from flask import request, jsonify, send_from_directory
 from app.models import User, Event, Friendship, SavedEvent
 from app.db import db
 from bcrypt import hashpw, gensalt, checkpw
@@ -333,3 +333,7 @@ def init_routes(app):
             db.session.rollback()
             logging.error(f"Error updating profile: {e}")
             return jsonify({"error": "Update failed"}), 500
+
+    @app.route('/static/<path:filename>')
+    def serve_static(filename):
+        return send_from_directory(os.path.join(os.getcwd(), 'app/static'), filename)
