@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from '../axiosWithToken';             // Use axios that auto-sends JWT
+import axios from '../axiosWithToken.js';             // Use axios that auto-sends JWT
 import './PageStyles.css';                         // Import CSS for styling
 
 function FriendsPage({ user }) {

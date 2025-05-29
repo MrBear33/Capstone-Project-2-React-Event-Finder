@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from '../axiosWithToken';              // Axios instance with token already included
+import axios from '../axiosWithToken.js';              // Axios instance with token already included
 import './UserHomepage.css';                        // Styles for this page
 
 function UserHomepage({ user }) {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from '../axiosWithToken';             // Custom axios instance with token
+import axios from '../axiosWithToken.js';             // Custom axios instance with token
 import './PageStyles.css';                         // Page-specific styles
 
 function EventsPage({ user }) {

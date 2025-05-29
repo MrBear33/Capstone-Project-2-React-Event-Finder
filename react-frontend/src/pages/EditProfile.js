@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from '../axiosWithToken';             // Token-aware axios instance
+import axios from '../axiosWithToken.js';             // Token-aware axios instance
 import './PageStyles.css';                         // Import CSS for styling
 
 function EditProfile({ user }) {
