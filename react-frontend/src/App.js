@@ -2,16 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 // Page components
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import EventsPage from './pages/EventsPage';
-import UserHomepage from './pages/UserHomepage';
-import FriendsPage from './pages/FriendsPage';
-import EditProfile from './pages/EditProfile';
+import LandingPage from './pages/LandingPage.js';
+import LoginPage from './pages/LoginPage.js';
+import RegisterPage from './pages/RegisterPage.js';
+import EventsPage from './pages/EventsPage.js';
+import UserHomepage from './pages/UserHomepage.js';
+import FriendsPage from './pages/FriendsPage.js';
+import EditProfile from './pages/EditProfile.js';
 
 // Navbar component
-import Navbar from './pages/Navbar';
+import Navbar from './pages/Navbar.js';
 
 function App() {
   const [user, setUser] = useState(null);       // Stores logged-in user's username
