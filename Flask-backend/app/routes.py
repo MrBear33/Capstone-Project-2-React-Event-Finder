@@ -131,7 +131,8 @@ def init_routes(app):
                     'latlong': f"{user.latitude},{user.longitude}",
                     'radius': 50,
                     'unit': 'miles',
-                    'size': 10
+                    'size': 50,
+                    'sort': 'date,asc'
                 }
             )
             res.raise_for_status()
