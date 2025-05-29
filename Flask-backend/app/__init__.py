@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_migrate import Migrate
 from app.db import db
-from config import config
+from app.config import config
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
@@ -11,9 +11,13 @@ import os
 load_dotenv()
 
 def create_app(config_name="default"):
-    app = Flask(__name__, static_folder="static")
+    app = Flask(
+        __name__,
+        static_url_path='/static',
+        static_folder='app/static'  # ✅ Serve static files from this path
+    )
 
-    # ✅ Add JWT secret key config
+    # Add JWT secret key config
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 
     # Enable CORS for all routes
@@ -26,7 +30,7 @@ def create_app(config_name="default"):
     db.init_app(app)
     Migrate(app, db)
 
-    # ✅ Initialize JWT manager
+    # Initialize JWT manager
     jwt = JWTManager(app)
 
     # Register routes
