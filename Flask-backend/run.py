@@ -1,3 +1,4 @@
+from flask import Flask
 from app import create_app
 import logging
 import os
@@ -5,10 +6,11 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')  # Fetch the API key from the .env file
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 TICKETMASTER_API_KEY = os.getenv('TICKETMASTER_API_KEY')
 
 # Create the Flask app
+app = Flask(__name__, static_url_path='/static', static_folder='app/static')
 app = create_app()
 
 # Force logging config to work under Gunicorn
